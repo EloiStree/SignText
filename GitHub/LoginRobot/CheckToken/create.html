@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Token Creator</title>
+
+<style>
+body {
+    background: #000;
+    color: #00ff66;
+    font-family: Consolas, monospace;
+    padding: 30px;
+}
+
+h1 {
+    color: #00ff66;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+}
+
+.card {
+    border: 1px solid #00aa44;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 6px;
+}
+
+button {
+    background: #000;
+    color: #00ff66;
+    border: 1px solid #00ff66;
+    padding: 12px 20px;
+    font-family: Consolas, monospace;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #003311;
+}
+
+.success {
+    color: #00ff66;
+}
+
+.error {
+    color: #ff4444;
+}
+
+pre {
+    background: #111;
+    padding: 15px;
+    border: 1px solid #004d22;
+    overflow:auto;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>GitHub Token Creator</h1>
+
+<div class="card">
+
+<p>
+Authenticate with GitHub to create an OAuth access token.
+</p>
+
+<button onclick="login()">
+[ LOGIN WITH GITHUB ]
+</button>
+
+</div>
+
+
+<div id="result"></div>
+
+
+</div>
+
+
+<script>
+
+function login(){
+
+    /*
+      Backend endpoint.
+      Example:
+      /auth/github
+      redirects user to GitHub OAuth.
+    */
+
+    window.location.href="/auth/github";
+
+}
+
+
+const params = new URLSearchParams(window.location.search);
+
+const token = params.get("token");
+
+const result = document.getElementById("result");
+
+
+if(token){
+
+    result.innerHTML = `
+
+    <div class="card">
+
+    <h2 class="success">
+    ✅ Token Created
+    </h2>
+
+    <p>
+    Copy this token now. Store it securely.
+    </p>
+
+    <pre>${token}</pre>
+
+    </div>
+
+    `;
+
+}
+
+
+</script>
+
+
+</body>
+</html>
