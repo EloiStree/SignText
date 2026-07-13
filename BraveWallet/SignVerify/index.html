@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brave Wallet Sign & Verify SDK</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0c0a09;
+    --bg-elevated: #1c1917;
+    --card: #1c1917;
+    --card-hover: #292524;
+    --border: #44403c;
+    --border-accent: #d97706;
+    --fg: #fafaf9;
+    --fg-muted: #a8a29e;
+    --accent: #f59e0b;
+    --accent-dim: rgba(245,158,11,0.12);
+    --accent-glow: rgba(245,158,11,0.25);
+    --success: #22c55e;
+    --error: #ef4444;
+    --info: #38bdf8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background atmosphere */
+  .bg-atmosphere {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .bg-atmosphere::before {
+    content: '';
+    position: absolute;
+    top: -30%;
+    left: -10%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(ellipse, rgba(245,158,11,0.06) 0%, transparent 70%);
+    animation: float-blob 20s ease-in-out infinite;
+  }
+
+  .bg-atmosphere::after {
+    content: '';
+    position: absolute;
+    bottom: -20%;
+    right: -15%;
+    width: 55%;
+    height: 55%;
+    background: radial-gradient(ellipse, rgba(217,119,6,0.04) 0%, transparent 70%);
+    animation: float-blob 25s ease-in-out infinite reverse;
+  }
+
+  @keyframes float-blob {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -20px) scale(1.05); }
+    66% { transform: translate(-20px, 15px) scale(0.95); }
+  }
+
+  /* Grid pattern overlay */
+  .grid-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(245,158,11,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245,158,11,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Card styling */
+  .sdk-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sdk-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .sdk-card:hover::before { opacity: 1; }
+  .sdk-card:hover { border-color: rgba(245,158,11,0.2); }
+
+  /* Input styling */
+  .sdk-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--fg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    transition: all 0.25s ease;
+    outline: none;
+    resize: vertical;
+  }
+
+  .sdk-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim), 0 0 20px var(--accent-dim);
+  }
+
+  .sdk-input::placeholder { color: var(--fg-muted); opacity: 0.5; }
+
+  /* Buttons */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #0c0a09;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%);
+    transform: translateX(-100%);
+    transition: transform 0.5s ease;
+  }
+
+  .btn-primary:hover::after { transform: translateX(100%); }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(245,158,11,0.35);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: transparent;
+    color: var(--accent);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .btn-secondary:hover {
+    background: var(--accent-dim);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(245,158,11,0.15);
+  }
+
+  .btn-secondary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Status badge */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .status-badge .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .status-connected { background: rgba(34,197,94,0.12); color: #22c55e; }
+  .status-connected .dot { background: #22c55e; }
+  .status-disconnected { background: rgba(239,68,68,0.12); color: #ef4444; }
+  .status-disconnected .dot { background: #ef4444; animation: none; }
+  .status-pending { background: rgba(245,158,11,0.12); color: #f59e0b; }
+  .status-pending .dot { background: #f59e0b; }
+
+  /* Output panels */
+  .output-panel {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(245,158,11,0.05);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-muted);
+  }
+
+  .output-body {
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--fg);
+    word-break: break-all;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .output-body::-webkit-scrollbar { width: 6px; }
+  .output-body::-webkit-scrollbar-track { background: transparent; }
+  .output-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .output-body .label { color: var(--fg-muted); }
+  .output-body .value { color: var(--accent); }
+  .output-body .success { color: var(--success); }
+  .output-body .error { color: var(--error); }
+
+  /* Copy button */
+  .copy-btn {
+    background: none;
+    border: none;
+    color: var(--fg-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-size: 13px;
+  }
+
+  .copy-btn:hover { color: var(--accent); background: var(--accent-dim); }
+
+  /* Toast */
+  .toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .toast {
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: toast-in 0.4s cubic-bezier(0.16,1,0.3,1);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    max-width: 380px;
+  }
+
+  .toast-success { background: #14532d; color: #86efac; border: 1px solid #166534; }
+  .toast-error { background: #450a0a; color: #fca5a5; border: 1px solid #7f1d1d; }
+  .toast-info { background: #0c2d48; color: #7dd3fc; border: 1px solid #075985; }
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateX(60px) scale(0.95); }
+    to { opacity: 1; transform: translateX(0) scale(1); }
+  }
+
+  .toast-exit {
+    animation: toast-out 0.3s ease forwards;
+  }
+
+  @keyframes toast-out {
+    to { opacity: 0; transform: translateX(60px) scale(0.95); }
+  }
+
+  /* Step indicator */
+  .step-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 32px;
+  }
+
+  .step-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--fg-muted);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .step-item.active {
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .step-item.completed {
+    color: var(--success);
+  }
+
+  .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    border: 2px solid var(--border);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+  }
+
+  .step-item.active .step-num {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .step-item.completed .step-num {
+    border-color: var(--success);
+    background: var(--success);
+    color: var(--bg);
+  }
+
+  .step-connector {
+    width: 40px;
+    height: 2px;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.3s ease;
+  }
+
+  .step-connector.done { background: var(--success); }
+
+  /* Brave logo shield */
+  .brave-shield {
+    width: 48px;
+    height: 48px;
+    position: relative;
+  }
+
+  .brave-shield svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Verify section */
+  .verify-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 40px 0;
+  }
+
+  .verify-divider::before,
+  .verify-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+  }
+
+  .verify-divider span {
+    color: var(--fg-muted);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    white-space: nowrap;
+  }
+
+  /* Spinner */
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Signature verified animation */
+  @keyframes verify-pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .verify-result {
+    animation: verify-pop 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  /* Floating particles */
+  .particle {
+    position: fixed;
+    width: 3px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .step-flow { flex-wrap: wrap; gap: 4px; }
+    .step-connector { display: none; }
+    .step-item { padding: 8px 12px; font-size: 12px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-atmosphere"></div>
+<div class="grid-overlay"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Floating particles container -->
+<div id="particles"></div>
+
+<main style="position:relative; z-index:1; max-width:780px; margin:0 auto; padding:48px 20px 80px;">
+
+  <!-- Header -->
+  <header style="text-align:center; margin-bottom:48px;">
+    <div style="display:inline-flex; align-items:center; justify-content:center; gap:14px; margin-bottom:20px;">
+      <div class="brave-shield">
+        <svg viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 2L4 16V36C4 52.4 16.2 67.6 32 72C47.8 67.6 60 52.4 60 36V16L32 2Z" fill="url(#shieldGrad)" stroke="#f59e0b" stroke-width="1.5"/>
+          <path d="M32 12L14 22V36C14 47.6 22 58.4 32 62C42 58.4 50 47.6 50 36V22L32 12Z" fill="rgba(12,10,9,0.6)"/>
+          <path d="M22 36L28 42L42 28" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="shieldGrad" x1="4" y1="2" x2="60" y2="72" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#f59e0b"/>
+              <stop offset="1" stop-color="#d97706"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <h1 style="font-size:clamp(28px,5vw,42px); font-weight:700; letter-spacing:-0.03em; line-height:1.1;">
+        Wallet <span style="color:var(--accent);">Sign & Verify</span>
+      </h1>
+    </div>
+    <p style="color:var(--fg-muted); font-size:16px; max-width:500px; margin:0 auto; line-height:1.6;">
+      Sign any text with your Brave Wallet and verify signatures locally — no server, no middleman.
+    </p>
+  </header>
+
+  <!-- Step Flow -->
+  <nav class="step-flow" aria-label="Progress steps">
+    <div class="step-item active" id="step1">
+      <div class="step-num">1</div>
+      <span>Connect</span>
+    </div>
+    <div class="step-connector" id="conn1"></div>
+    <div class="step-item" id="step2">
+      <div class="step-num">2</div>
+      <span>Sign</span>
+    </div>
+    <div class="step-connector" id="conn2"></div>
+    <div class="step-item" id="step3">
+      <div class="step-num">3</div>
+      <span>Verify</span>
+    </div>
+  </nav>
+
+  <!-- Section 1: Connect -->
+  <section class="sdk-card" style="padding:32px; margin-bottom:24px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
+      <div>
+        <h2 style="font-size:18px; font-weight:600; margin-bottom:4px;">Connect Wallet</h2>
+        <p style="font-size:13px; color:var(--fg-muted);">Requires Brave Browser with Wallet enabled</p>
+      </div>
+      <div id="walletStatus">
+        <span class="status-badge status-disconnected"><span class="dot"></span>Disconnected</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="connectBtn" onclick="connectWallet()" aria-label="Connect Brave Wallet">
+      <i class="fa-solid fa-wallet"></i>
+      Connect Brave Wallet
+    </button>
+
+    <div id="connectOutput" style="margin-top:20px; display:none;">
+      <div class="output-panel">
+        <div class="output-header">
+          <span>Connection Details</span>
+          <button class="copy-btn" onclick="copyOutput('connectBody')" title="Copy to clipboard" aria-label="Copy connection details">
+            <i class="fa-regular fa-copy"></i> Copy
+          </button>
+        </div>
+        <div class="output-body" id="connectBody"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Sign -->
+  <section class="sdk-card" style="padding:32px; margin-bottom:24px;">
+    <h2 style="font-size:18px; font-weight:600; margin-bottom:4px;">Sign Message</h2>
+    <p style="font-size:13px; color:var(--fg-muted); margin-bottom:20px;">
+      Uses <code class="mono" style="background:var(--accent-dim); padding:2px 7px; border-radius:6px; font-size:12px;">personal_sign</code> — the message is prefixed and hashed before signing via ECDSA
+    </p>
+
+    <label for="messageInput" style="font-size:13px; font-weight:600; color:var(--fg-muted); display:block; margin-bottom:8px;">
+      Message to sign
+    </label>
+    <textarea
+      id="messageInput"
+      class="sdk-input"
+      rows="3"
+      placeholder="Enter the text you want to sign..."
+      aria-label="Message to sign"
+    >Hello, Brave Wallet! This is a signed message.</textarea>
+
+    <div style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap;">
+      <button class="btn-primary" id="signBtn" onclick="signMessage()" disabled aria-label="Sign message">
+        <i class="fa-solid fa-pen-nib"></i>
+        Sign Message
+      </button>
+      <button class="btn-secondary" id="clearSignBtn" onclick="clearSign()" aria-label="Clear signature output">
+        <i class="fa-solid fa-eraser"></i>
+        Clear
+      </button>
+    </div>
+
+    <div id="signOutput" style="margin-top:20px; display:none;">
+      <div class="output-panel">
+        <div class="output-header">
+          <span>Signature Result</span>
+          <button class="copy-btn" onclick="copyOutput('signBody')" title="Copy to clipboard" aria-label="Copy signature">
+            <i class="fa-regular fa-copy"></i> Copy
+          </button>
+        </div>
+        <div class="output-body" id="signBody"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Divider -->
+  <div class="verify-divider">
+    <span><i class="fa-solid fa-shield-halved" style="margin-right:8px; color:var(--accent);"></i>Offline Verification</span>
+  </div>
+
+  <!-- Section 3: Verify -->
+  <section class="sdk-card" style="padding:32px;">
+    <h2 style="font-size:18px; font-weight:600; margin-bottom:4px;">Verify Signature</h2>
+    <p style="font-size:13px; color:var(--fg-muted); margin-bottom:20px;">
+      Recovers the signer address from the signature using elliptic curve public key recovery — entirely client-side
+    </p>
+
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div>
+        <label for="verifyMsg" style="font-size:13px; font-weight:600; color:var(--fg-muted); display:block; margin-bottom:8px;">
+          Original Message
+        </label>
+        <textarea
+          id="verifyMsg"
+          class="sdk-input"
+          rows="2"
+          placeholder="Paste the original message..."
+          aria-label="Original message for verification"
+        ></textarea>
+      </div>
+      <div>
+        <label for="verifySig" style="font-size:13px; font-weight:600; color:var(--fg-muted); display:block; margin-bottom:8px;">
+          Signature (hex)
+        </label>
+        <textarea
+          id="verifySig"
+          class="sdk-input"
+          rows="2"
+          placeholder="0x..."
+          aria-label="Signature hex for verification"
+        ></textarea>
+      </div>
+      <div>
+        <label for="verifyAddr" style="font-size:13px; font-weight:600; color:var(--fg-muted); display:block; margin-bottom:8px;">
+          Expected Signer Address <span style="color:var(--fg-muted); opacity:0.5;">(optional — leave blank to just recover)</span>
+        </label>
+        <input
+          id="verifyAddr"
+          class="sdk-input"
+          type="text"
+          placeholder="0x..."
+          aria-label="Expected signer address"
+          style="font-size:13px;"
+        >
+      </div>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top:20px; flex-wrap:wrap;">
+      <button class="btn-primary" id="verifyBtn" onclick="verifySignature()" aria-label="Verify signature">
+        <i class="fa-solid fa-check-double"></i>
+        Verify Signature
+      </button>
+      <button class="btn-secondary" onclick="autoFillVerify()" aria-label="Auto-fill from sign result">
+        <i class="fa-solid fa-arrow-down"></i>
+        Fill from Sign Result
+      </button>
+      <button class="btn-secondary" onclick="clearVerify()" aria-label="Clear verification">
+        <i class="fa-solid fa-eraser"></i>
+        Clear
+      </button>
+    </div>
+
+    <div id="verifyOutput" style="margin-top:20px; display:none;">
+      <div class="output-panel">
+        <div class="output-header">
+          <span>Verification Result</span>
+          <button class="copy-btn" onclick="copyOutput('verifyBody')" title="Copy to clipboard" aria-label="Copy verification result">
+            <i class="fa-regular fa-copy"></i> Copy
+          </button>
+        </div>
+        <div class="output-body" id="verifyBody"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="text-align:center; margin-top:56px; color:var(--fg-muted); font-size:13px; line-height:1.8;">
+    <p>Powered by <span style="color:var(--accent); font-weight:600;">Brave Wallet</span> + <span style="color:var(--accent); font-weight:600;">ethers.js v6</span></p>
+    <p style="opacity:0.5; margin-top:4px;">All cryptographic operations run locally in your browser. No data leaves this page.</p>
+  </footer>
+
+</main>
+
+<script>
+  // ========== State ==========
+  let currentAccount = null;
+  let lastSignResult = null;
+
+  // ========== Toast System ==========
+  function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    const icons = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info' };
+    toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i><span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add('toast-exit');
+      setTimeout(() => toast.remove(), 300);
+    }, 3500);
+  }
+
+  // ========== Copy Helper ==========
+  function copyOutput(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const text = el.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Copied to clipboard', 'success');
+    }).catch(() => {
+      showToast('Failed to copy', 'error');
+    });
+  }
+
+  // ========== Step Flow ==========
+  function updateSteps(active) {
+    for (let i = 1; i <= 3; i++) {
+      const step = document.getElementById(`step${i}`);
+      step.classList.remove('active', 'completed');
+      if (i < active) step.classList.add('completed');
+      else if (i === active) step.classList.add('active');
+    }
+    for (let i = 1; i <= 2; i++) {
+      const conn = document.getElementById(`conn${i}`);
+      conn.classList.toggle('done', i < active);
+    }
+  }
+
+  // ========== Check Brave Wallet ==========
+  function getProvider() {
+    if (window.ethereum && window.ethereum.isBraveWallet) {
+      return window.ethereum;
+    }
+    // Fallback: some Brave versions don't set isBraveWallet explicitly
+    if (window.ethereum && window.navigator.brave) {
+      return window.ethereum;
+    }
+    return null;
+  }
+
+  // ========== Connect Wallet ==========
+  async function connectWallet() {
+    const provider = getProvider();
+    const btn = document.getElementById('connectBtn');
+    const statusEl = document.getElementById('walletStatus');
+
+    if (!provider) {
+      showToast('Brave Wallet not detected. Please use the Brave browser.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Connecting...';
+    statusEl.innerHTML = '<span class="status-badge status-pending"><span class="dot"></span>Connecting</span>';
+
+    try {
+      const accounts = await provider.request({ method: 'eth_requestAccounts' });
+
+      if (accounts && accounts.length > 0) {
+        currentAccount = accounts[0];
+
+        // Get chain info
+        const chainId = await provider.request({ method: 'eth_chainId' });
+        const chainHex = parseInt(chainId, 16);
+
+        // Known chain names
+        const chainNames = {
+          1: 'Ethereum Mainnet',
+          5: 'Goerli Testnet',
+          11155111: 'Sepolia Testnet',
+          137: 'Polygon',
+          42161: 'Arbitrum One',
+          10: 'Optimism',
+          8453: 'Base',
+          43114: 'Avalanche C-Chain',
+          250: 'Fantom',
+          56: 'BNB Smart Chain',
+        };
+
+        const chainName = chainNames[chainHex] || `Chain #${chainHex}`;
+
+        // Update UI
+        statusEl.innerHTML = '<span class="status-badge status-connected"><span class="dot"></span>Connected</span>';
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Connected';
+        btn.disabled = true;
+
+        // Show output
+        const outputEl = document.getElementById('connectOutput');
+        const bodyEl = document.getElementById('connectBody');
+        bodyEl.innerHTML = `
+          <div><span class="label">Address: </span><span class="value">${currentAccount}</span></div>
+          <div><span class="label">Chain ID: </span><span class="value">${chainHex} (${chainName})</span></div>
+          <div><span class="label">Provider: </span><span class="value">Brave Wallet</span></div>
+        `;
+        outputEl.style.display = 'block';
+
+        // Enable sign
+        document.getElementById('signBtn').disabled = false;
+        updateSteps(2);
+
+        showToast('Wallet connected successfully', 'success');
+      }
+    } catch (err) {
+      console.error('Connection error:', err);
+      statusEl.innerHTML = '<span class="status-badge status-disconnected"><span class="dot"></span>Disconnected</span>';
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-wallet"></i> Connect Brave Wallet';
+
+      if (err.code === 4001) {
+        showToast('Connection rejected by user', 'error');
+      } else {
+        showToast(`Connection failed: ${err.message || 'Unknown error'}`, 'error');
+      }
+    }
+  }
+
+  // ========== Sign Message ==========
+  async function signMessage() {
+    const provider = getProvider();
+    const message = document.getElementById('messageInput').value.trim();
+
+    if (!provider) {
+      showToast('Brave Wallet not detected', 'error');
+      return;
+    }
+
+    if (!currentAccount) {
+      showToast('Please connect your wallet first', 'error');
+      return;
+    }
+
+    if (!message) {
+      showToast('Please enter a message to sign', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('signBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Waiting for signature...';
+
+    try {
+      // personal_sign requires hex-encoded message
+      const msgHex = '0x' + new TextEncoder().encode(message).reduce((acc, b) => acc + b.toString(16).padStart(2, '0'), '');
+
+      const signature = await provider.request({
+        method: 'personal_sign',
+        params: [msgHex, currentAccount],
+      });
+
+      lastSignResult = { message, signature, signer: currentAccount };
+
+      // Display result
+      const outputEl = document.getElementById('signOutput');
+      const bodyEl = document.getElementById('signBody');
+      bodyEl.innerHTML = `
+        <div><span class="label">Message: </span><span class="value">"${escapeHtml(message)}"</span></div>
+        <div><span class="label">Signer:  </span><span class="value">${currentAccount}</span></div>
+        <div style="margin-top:8px;"><span class="label">Signature:</span></div>
+        <div style="margin-top:4px; color:var(--accent); font-size:12px; line-height:1.6;">${signature}</div>
+        <div style="margin-top:8px; font-size:11px; color:var(--fg-muted);">
+          Length: ${signature.length} chars (${(signature.length - 2) / 2} bytes)
+        </div>
+      `;
+      outputEl.style.display = 'block';
+
+      updateSteps(3);
+      showToast('Message signed successfully', 'success');
+
+    } catch (err) {
+      console.error('Sign error:', err);
+      if (err.code === 4001) {
+        showToast('Signature rejected by user', 'error');
+      } else {
+        showToast(`Signing failed: ${err.message || 'Unknown error'}`, 'error');
+      }
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-pen-nib"></i> Sign Message';
+    }
+  }
+
+  // ========== Verify Signature ==========
+  function verifySignature() {
+    const message = document.getElementById('verifyMsg').value.trim();
+    const signature = document.getElementById('verifySig').value.trim();
+    const expectedAddr = document.getElementById('verifyAddr').value.trim();
+
+    if (!message) {
+      showToast('Please enter the original message', 'error');
+      return;
+    }
+
+    if (!signature) {
+      showToast('Please enter the signature', 'error');
+      return;
+    }
+
+    try {
+      // Use ethers.js to recover the signer address
+      const recoveredAddress = ethers.verifyMessage(message, signature);
+
+      const outputEl = document.getElementById('verifyOutput');
+      const bodyEl = document.getElementById('verifyBody');
+
+      let resultHtml = `
+        <div><span class="label">Message:   </span><span class="value">"${escapeHtml(message)}"</span></div>
+        <div><span class="label">Recovered: </span><span class="value">${recoveredAddress}</span></div>
+      `;
+
+      if (expectedAddr) {
+        const normalizedRecovered = recoveredAddress.toLowerCase();
+        const normalizedExpected = expectedAddr.toLowerCase();
+        const isValid = normalizedRecovered === normalizedExpected;
+
+        resultHtml += `
+          <div><span class="label">Expected:  </span><span class="value">${expectedAddr}</span></div>
+          <div style="margin-top:12px; padding:12px 16px; border-radius:10px; background:${isValid ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'}; border:1px solid ${isValid ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'};">
+            <span class="${isValid ? 'success' : 'error'}" style="font-weight:700; font-size:15px;">
+              <i class="fa-solid ${isValid ? 'fa-circle-check' : 'fa-circle-xmark'}" style="margin-right:6px;"></i>
+              ${isValid ? 'SIGNATURE VALID' : 'SIGNATURE INVALID'}
+            </span>
+            <div style="margin-top:6px; font-size:12px; color:var(--fg-muted);">
+              ${isValid
+                ? 'The recovered address matches the expected signer.'
+                : 'The recovered address does NOT match the expected signer. The message may have been tampered with or the signature is from a different key.'
+              }
+            </div>
+          </div>
+        `;
+      } else {
+        resultHtml += `
+          <div style="margin-top:12px; padding:12px 16px; border-radius:10px; background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.2);">
+            <span style="color:var(--info); font-weight:600; font-size:14px;">
+              <i class="fa-solid fa-circle-info" style="margin-right:6px;"></i>
+              Address Recovered
+            </span>
+            <div style="margin-top:4px; font-size:12px; color:var(--fg-muted);">
+              No expected address provided. The signature is cryptographically valid — the above address produced this signature. Provide an expected address to confirm a match.
+            </div>
+          </div>
+        `;
+      }
+
+      bodyEl.innerHTML = resultHtml;
+      outputEl.style.display = 'block';
+      outputEl.querySelector('.output-body').classList.add('verify-result');
+      setTimeout(() => outputEl.querySelector('.output-body').classList.remove('verify-result'), 500);
+
+      if (expectedAddr) {
+        const isValid = recoveredAddress.toLowerCase() === expectedAddr.toLowerCase();
+        showToast(isValid ? 'Signature is valid' : 'Signature is INVALID', isValid ? 'success' : 'error');
+      } else {
+        showToast('Address recovered from signature', 'info');
+      }
+
+    } catch (err) {
+      console.error('Verify error:', err);
+      const outputEl = document.getElementById('verifyOutput');
+      const bodyEl = document.getElementById('verifyBody');
+      bodyEl.innerHTML = `
+        <div class="error" style="font-weight:600;">
+          <i class="fa-solid fa-triangle-exclamation" style="margin-right:6px;"></i>
+          Verification Failed
+        </div>
+        <div style="margin-top:8px; color:var(--fg-muted); font-size:12px;">
+          ${escapeHtml(err.message || 'Invalid signature format. Make sure the signature is a valid 0x-prefixed hex string.')}
+        </div>
+      `;
+      outputEl.style.display = 'block';
+      showToast('Verification failed — invalid signature or message', 'error');
+    }
+  }
+
+  // ========== Auto-Fill from Sign Result ==========
+  function autoFillVerify() {
+    if (!lastSignResult) {
+      showToast('No sign result available. Sign a message first.', 'error');
+      return;
+    }
+    document.getElementById('verifyMsg').value = lastSignResult.message;
+    document.getElementById('verifySig').value = lastSignResult.signature;
+    document.getElementById('verifyAddr').value = lastSignResult.signer;
+    showToast('Fields populated from last signature', 'info');
+  }
+
+  // ========== Clear Helpers ==========
+  function clearSign() {
+    document.getElementById('signOutput').style.display = 'none';
+    document.getElementById('signBody').innerHTML = '';
+    lastSignResult = null;
+    updateSteps(currentAccount ? 2 : 1);
+  }
+
+  function clearVerify() {
+    document.getElementById('verifyMsg').value = '';
+    document.getElementById('verifySig').value = '';
+    document.getElementById('verifyAddr').value = '';
+    document.getElementById('verifyOutput').style.display = 'none';
+    document.getElementById('verifyBody').innerHTML = '';
+  }
+
+  // ========== HTML Escape ==========
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ========== Floating Particles ==========
+  function initParticles() {
+    const container = document.getElementById('particles');
+    const count = 15;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const x = Math.random() * 100;
+      const y = Math.random() * 100;
+      const size = 2 + Math.random() * 3;
+      const dur = 15 + Math.random() * 25;
+      const delay = Math.random() * dur;
+
+      p.style.cssText = `
+        left: ${x}%;
+        top: ${y}%;
+        width: ${size}px;
+        height: ${size}px;
+        animation: particle-float ${dur}s ${delay}s ease-in-out infinite;
+      `;
+      container.appendChild(p);
+    }
+
+    // Add particle keyframes
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes particle-float {
+        0%, 100% { opacity: 0; transform: translateY(0) translateX(0); }
+        15% { opacity: 0.3; }
+        50% { opacity: 0.15; transform: translateY(-80px) translateX(30px); }
+        85% { opacity: 0.3; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // ========== Init ==========
+  document.addEventListener('DOMContentLoaded', () => {
+    initParticles();
+
+    // Auto-detect if already connected (some Brave versions keep connection)
+    const provider = getProvider();
+    if (provider) {
+      provider.request({ method: 'eth_accounts' }).then(accounts => {
+        if (accounts && accounts.length > 0) {
+          // Already connected — auto-connect
+          connectWallet();
+        }
+      }).catch(() => {});
+    }
+
+    // Keyboard shortcut: Ctrl+Enter to sign
+    document.getElementById('messageInput').addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!document.getElementById('signBtn').disabled) {
+          signMessage();
+        }
+      }
+    });
+
+    // Keyboard shortcut: Ctrl+Enter to verify
+    document.getElementById('verifySig').addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        verifySignature();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
