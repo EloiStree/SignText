@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sigillum — Sign Messages with Google</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{--bg:#0e0d12;--card:#17151d;--border:#2a2736;--border-h:#3d3950;--fg:#f0eef5;--fg2:#c7c3d2;--muted:#7f7a90;--accent:#e0793f;--accent-h:#ec8d55;--accent-dim:rgba(224,121,63,.12);--ok:#34d399;--ok-dim:rgba(52,211,153,.1);--err:#f87171;--err-dim:rgba(248,113,113,.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;overflow-x:hidden}
+
+/* Soft background orbs */
+.orb{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0}
+.orb-a{width:500px;height:500px;background:var(--accent);opacity:.06;top:-150px;left:-100px;animation:oF1 25s ease-in-out infinite}
+.orb-b{width:400px;height:400px;background:var(--ok);opacity:.04;bottom:-100px;right:-80px;animation:oF2 30s ease-in-out infinite}
+@keyframes oF1{0%,100%{transform:translate(0,0)}33%{transform:translate(80px,60px)}66%{transform:translate(-40px,100px)}}
+@keyframes oF2{0%,100%{transform:translate(0,0)}33%{transform:translate(-60px,-80px)}66%{transform:translate(50px,-40px)}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;transition:border-color .3s}
+.card:hover{border-color:var(--border-h)}
+
+.inp{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;color:var(--fg);font-family:'Outfit',sans-serif;font-size:.95rem;padding:14px 16px;outline:none;transition:border-color .2s,box-shadow .2s;line-height:1.5}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.inp::placeholder{color:var(--muted)}
+textarea.inp{resize:vertical;min-height:110px}
+.inp-sm{font-size:.85rem;padding:12px 14px;min-height:90px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;border-radius:12px;font-family:'Outfit',sans-serif;font-weight:600;font-size:.95rem;border:none;cursor:pointer;transition:all .2s;user-select:none;text-decoration:none}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover:not(:disabled){background:var(--accent-h);transform:translateY(-2px);box-shadow:0 6px 24px rgba(224,121,63,.3)}
+.btn-p:active:not(:disabled){transform:translateY(0)}
+.btn-s{background:var(--ok);color:#0e0d12}
+.btn-s:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 24px rgba(52,211,153,.3)}
+.btn-g{background:transparent;color:var(--fg2);border:1px solid var(--border)}
+.btn-g:hover:not(:disabled){border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.btn-sm{padding:10px 18px;font-size:.85rem;border-radius:10px}
+
+.sicon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+
+/* Steps */
+.step-c{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0;background:var(--accent-dim);color:var(--accent)}
+.step-l{width:2px;height:20px;background:var(--border);margin:2px auto}
+
+/* Proof certificate */
+.cert{border:1px solid var(--border);border-radius:16px;padding:24px;background:linear-gradient(135deg,rgba(224,121,63,.03),transparent 60%);position:relative;overflow:hidden}
+.cert::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),transparent)}
+.cert-seal{width:52px;height:52px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#fff;animation:sealPop .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes sealPop{0%{transform:scale(3) rotate(-20deg);opacity:0}60%{transform:scale(.9) rotate(5deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+.proof-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-family:'Courier New',monospace;font-size:.7rem;color:var(--muted);word-break:break-all;line-height:1.6;max-height:70px;overflow-y:auto}
+
+/* Verify result */
+.vr{border-radius:16px;padding:24px;animation:slideUp .4s ease-out}
+.vr-ok{background:var(--ok-dim);border:1px solid rgba(52,211,153,.2)}
+.vr-err{background:var(--err-dim);border:1px solid rgba(248,113,113,.2)}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.vr-icon{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;animation:sealPop .5s cubic-bezier(.34,1.56,.64,1)}
+.vr-icon-ok{background:var(--ok);color:#0e0d12}
+.vr-icon-err{background:var(--err);color:#fff}
+
+.irow{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);gap:12px}
+.irow:last-child{border-bottom:none}
+.irow .k{color:var(--muted);font-size:.85rem;white-space:nowrap}
+.irow .v{color:var(--fg2);font-weight:500;text-align:right;word-break:break-word}
+
+.warn-box{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.15);margin-bottom:14px}
+.warn-box i{color:#f59e0b;margin-top:2px;font-size:.85rem;flex-shrink:0}
+.warn-box span{color:#f59e0b;font-size:.85rem;line-height:1.5}
+
+/* User bar */
+.ubar{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:24px;flex-wrap:wrap}
+.ubar img{width:36px;height:36px;border-radius:50%;object-fit:cover}
+
+/* Google btn */
+.g-wrap{display:flex;justify-content:center;min-height:46px;margin:8px 0}
+.g-wrap iframe{border-radius:10px!important}
+
+/* Toast */
+.toast-c{position:fixed;top:20px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:14px 20px;border-radius:12px;font-size:.9rem;font-weight:500;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:tIn .3s ease-out,tOut .3s ease-in 2.7s forwards;max-width:360px;pointer-events:auto}
+.t-ok{background:#16a34a;color:#fff}.t-err{background:#dc2626;color:#fff}.t-info{background:#4338ca;color:#fff}
+@keyframes tIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes tOut{from{opacity:1}to{opacity:0;pointer-events:none}}
+
+.spin{width:18px;height:18px;border:2.5px solid transparent;border-top-color:currentColor;border-radius:50%;animation:sp .6s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.toggle-lk{font-size:.82rem;color:var(--muted);cursor:pointer;user-select:none;border:none;background:none;font-family:'Outfit',sans-serif;text-decoration:underline;text-underline-offset:3px}
+.toggle-lk:hover{color:var(--fg2)}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<!-- Background orbs -->
+<div class="orb orb-a"></div>
+<div class="orb orb-b"></div>
+
+<div class="relative" style="z-index:1;min-height:100vh;display:flex;flex-direction:column">
+
+<!-- Header -->
+<header class="px-5 sm:px-8 pt-8 pb-2 max-w-5xl mx-auto w-full text-center">
+    <div class="inline-flex items-center gap-3 mb-3">
+        <div class="sicon" style="background:var(--accent-dim);color:var(--accent)"><i class="fa-solid fa-stamp"></i></div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Sigillum</h1>
+    </div>
+    <p class="text-base" style="color:var(--muted);max-width:480px;margin:0 auto">Sign any message with your Google account, then let anyone verify it was really you.</p>
+</header>
+
+<!-- User bar (shown when connected) -->
+<div class="px-5 sm:px-8 pt-4 max-w-5xl mx-auto w-full">
+    <div id="userBar" class="ubar" style="display:none">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--ok);position:relative;flex-shrink:0">
+            <div style="position:absolute;inset:-4px;border-radius:50%;background:var(--ok);opacity:.3;animation:pls 2s ease-in-out infinite"></div>
+        </div>
+        <img id="uPic" src="" alt="" onerror="this.style.display='none'">
+        <span class="text-sm font-semibold" id="uName"></span>
+        <span class="text-sm" style="color:var(--muted)" id="uEmail"></span>
+        <button class="btn btn-g btn-sm ml-auto" onclick="signOut()"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
+    </div>
+</div>
+<style>@keyframes pls{0%,100%{transform:scale(1);opacity:.3}50%{transform:scale(2);opacity:0}}</style>
+
+<!-- Main content -->
+<main class="flex-1 px-5 sm:px-8 py-6 max-w-5xl mx-auto w-full">
+<div class="grid lg:grid-cols-2 gap-6">
+
+<!-- ==================== SIGN CARD ==================== -->
+<section class="card" style="border-top:3px solid var(--accent)">
+    <div class="flex items-center gap-3 mb-6">
+        <div class="sicon" style="background:var(--accent-dim);color:var(--accent)"><i class="fa-solid fa-pen-nib"></i></div>
+        <div>
+            <h2 class="text-xl font-bold">Sign a Message</h2>
+            <p class="text-xs" style="color:var(--muted)">Prove you wrote something</p>
+        </div>
+    </div>
+
+    <!-- State: Setup needed -->
+    <div id="signSetup">
+        <p class="text-sm mb-5" style="color:var(--fg2)">First time here? It takes about 2 minutes to set up.</p>
+        <div class="flex flex-col gap-1 mb-5">
+            <!-- Step 1 -->
+            <div class="flex items-start gap-3">
+                <div class="flex flex-col items-center"><div class="step-c">1</div><div class="step-l"></div></div>
+                <div class="pb-4">
+                    <p class="text-sm font-semibold mb-1">Open Google Cloud Console</p>
+                    <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" class="btn btn-g btn-sm">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i> Open Google Cloud
+                    </a>
+                </div>
+            </div>
+            <!-- Step 2 -->
+            <div class="flex items-start gap-3">
+                <div class="flex flex-col items-center"><div class="step-c">2</div><div class="step-l"></div></div>
+                <div class="pb-4">
+                    <p class="text-sm font-semibold mb-1">Create an OAuth Client ID</p>
+                    <p class="text-xs" style="color:var(--muted);line-height:1.6">Click <strong style="color:var(--fg2)">Create Credentials</strong> → <strong style="color:var(--fg2)">OAuth client ID</strong>. Choose <strong style="color:var(--fg2)">Web application</strong>. Add <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:.75rem">https://sigillum.page</code> (or your domain) as an authorized origin.</p>
+                </div>
+            </div>
+            <!-- Step 3 -->
+            <div class="flex items-start gap-3">
+                <div class="flex flex-col items-center"><div class="step-c">3</div></div>
+                <div class="flex-1">
+                    <p class="text-sm font-semibold mb-2">Paste your Client ID below</p>
+                    <input id="cidIn" class="inp inp-sm" style="min-height:auto;font-size:.82rem" placeholder="something.apps.googleusercontent.com" spellcheck="false" aria-label="Google Client ID">
+                    <button class="btn btn-p w-full mt-3" onclick="connectClient()" id="connBtn">
+                        <i class="fa-solid fa-plug"></i> Connect
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- State: Need sign-in -->
+    <div id="signSignin" style="display:none">
+        <p class="text-sm mb-4" style="color:var(--fg2)">Great, you're connected! Now sign in with your Google account.</p>
+        <div class="g-wrap" id="gBtnWrap"></div>
+        <div class="text-center mt-3">
+            <button class="toggle-lk" onclick="toggleFallback()">Can't see the button?</button>
+        </div>
+        <div id="fallback" style="display:none" class="mt-3">
+            <p class="text-xs mb-2" style="color:var(--muted)">Paste your Google ID token here (from your browser's developer tools or an alternative sign-in method):</p>
+            <textarea id="manTok" class="inp inp-sm" rows="3" placeholder="eyJhbGciOiJSUzI1NiIs..." aria-label="Manual token"></textarea>
+            <button class="btn btn-g w-full mt-2 btn-sm" onclick="useManual()"><i class="fa-solid fa-key"></i> Use This Token</button>
+        </div>
+    </div>
+
+    <!-- State: Ready to sign -->
+    <div id="signForm" style="display:none" class="flex flex-col gap-4">
+        <div>
+            <label class="block text-sm font-semibold mb-2" for="msgIn">Your message</label>
+            <textarea id="msgIn" class="inp" rows="4" placeholder="Type anything you want to sign..." aria-label="Message to sign"></textarea>
+        </div>
+        <button class="btn btn-p w-full" onclick="signMsg()" id="signBtn">
+            <i class="fa-solid fa-stamp"></i> Sign This Message
+        </button>
+    </div>
+
+    <!-- State: Signed result -->
+    <div id="signResult" style="display:none" class="mt-5">
+        <div class="cert">
+            <div class="flex items-start gap-4 mb-4">
+                <div class="cert-seal"><i class="fa-solid fa-check"></i></div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold" style="color:var(--accent)">Message Signed</p>
+                    <p class="text-xs mt-0.5" style="color:var(--muted)" id="certTime"></p>
+                </div>
+            </div>
+            <div class="p-4 rounded-xl mb-4" style="background:var(--bg);border:1px solid var(--border)">
+                <p class="text-sm italic" style="color:var(--fg2);line-height:1.7;word-break:break-word" id="certMsg"></p>
+            </div>
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold" style="color:var(--muted)">PROOF CODE</span>
+                <button class="btn btn-p btn-sm" onclick="copyProof()" id="copyBtn"><i class="fa-regular fa-copy"></i> Copy</button>
+            </div>
+            <div class="proof-box" id="proofBox"></div>
+        </div>
+        <button class="btn btn-g w-full mt-3 btn-sm" onclick="resetSign()"><i class="fa-solid fa-arrow-rotate-left"></i> Sign Another Message</button>
+    </div>
+</section>
+
+<!-- ==================== VERIFY CARD ==================== -->
+<section class="card" style="border-top:3px solid var(--ok)">
+    <div class="flex items-center gap-3 mb-6">
+        <div class="sicon" style="background:var(--ok-dim);color:var(--ok)"><i class="fa-solid fa-shield-halved"></i></div>
+        <div>
+            <h2 class="text-xl font-bold">Check a Proof</h2>
+            <p class="text-xs" style="color:var(--muted)">Verify who signed a message</p>
+        </div>
+    </div>
+
+    <div>
+        <label class="block text-sm font-semibold mb-2" for="vIn">Paste the proof code</label>
+        <textarea id="vIn" class="inp inp-sm" rows="4" placeholder="Paste the proof code someone sent you..." aria-label="Proof code to verify"></textarea>
+    </div>
+    <button class="btn btn-s w-full mt-4" onclick="verifySig()" id="vBtn">
+        <i class="fa-solid fa-magnifying-glass"></i> Check This Proof
+    </button>
+
+    <div id="vRes" class="mt-5"></div>
+
+    <p class="text-xs mt-4 text-center" style="color:var(--muted)">
+        <i class="fa-solid fa-lock text-[10px] mr-1"></i>
+        Everything stays in your browser. No data is sent anywhere.
+    </p>
+</section>
+
+</div>
+</main>
+
+<!-- Footer -->
+<footer class="px-5 py-6 text-center text-xs" style="color:var(--muted)">
+    Sigillum — Client-side Google message signing and verification
+</footer>
+</div>
+
+<!-- Toasts -->
+<div class="toast-c" id="toasts"></div>
+
+<script>
+/* ===== State ===== */
+let idToken = null;
+let userInfo = null;
+let clientId = localStorage.getItem('sig_cid') || '';
+let jwksCache = null;
+let jwksExpiry = 0;
+
+/* ===== Utilities ===== */
+function b64urlEnc(s) {
+    return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function b64urlDec(s) {
+    s = s.replace(/-/g,'+').replace(/_/g,'/');
+    while (s.length % 4) s += '=';
+    return decodeURIComponent(escape(atob(s)));
+}
+function parseJwt(t) {
+    const p = t.split('.');
+    if (p.length !== 3) throw new Error('Invalid format');
+    return { header: JSON.parse(b64urlDec(p[0])), payload: JSON.parse(b64urlDec(p[1])), sig: p[2] };
+}
+function fmtTime(ts) {
+    if (!ts) return '—';
+    return new Date(ts * 1000).toLocaleString(undefined, { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+/* ===== Toast ===== */
+function toast(msg, type='info') {
+    const el = document.createElement('div');
+    const cls = { success:'t-ok', error:'t-err', info:'t-info' };
+    const ico = { success:'fa-circle-check', error:'fa-circle-xmark', info:'fa-circle-info' };
+    el.className = 'toast ' + (cls[type]||cls.info);
+    el.innerHTML = `<i class="fa-solid ${ico[type]||ico.info}"></i> ${escHtml(msg)}`;
+    document.getElementById('toasts').appendChild(el);
+    setTimeout(() => el.remove(), 3200);
+}
+
+/* ===== Friendly error mapping ===== */
+function friendlyErr(e) {
+    const m = e.message || '';
+    if (m.includes('Invalid format') || m.includes('Invalid JWT')) return 'This doesn\'t look like a valid proof code. Make sure you copied the entire thing.';
+    if (m.includes('issuer')) return 'This proof wasn\'t created with a Google account.';
+    if (m.includes('key not found') || m.includes('kid')) return 'This proof can\'t be verified — it may have been tampered with.';
+    if (m.includes('verification failed') || m.includes('signature')) return 'This proof has been altered and is no longer valid.';
+    if (m.includes('Malformed') || m.includes('missing')) return 'This proof code is incomplete or corrupted.';
+    if (m.includes('Failed to fetch') || m.includes('NetworkError')) return 'Couldn\'t reach Google\'s servers. Check your internet connection.';
+    if (m.includes('version')) return 'This proof was made with an older version of this tool.';
+    return 'Something went wrong while checking this proof.';
+}
+
+/* ===== Show/hide sign card states ===== */
+function showSignState(state) {
+    document.getElementById('signSetup').style.display = state === 'setup' ? 'block' : 'none';
+    document.getElementById('signSignin').style.display = state === 'signin' ? 'block' : 'none';
+    document.getElementById('signForm').style.display = state === 'form' ? 'flex' : 'none';
+    document.getElementById('signResult').style.display = state === 'result' ? 'block' : 'none';
+}
+
+/* ===== Connect client ===== */
+function connectClient() {
+    const v = document.getElementById('cidIn').value.trim();
+    if (!v) { toast('Please paste your Client ID first', 'error'); return; }
+    clientId = v;
+    localStorage.setItem('sig_cid', v);
+    document.getElementById('connBtn').innerHTML = '<span class="spin"></span>';
+    document.getElementById('connBtn').disabled = true;
+    waitForG().then(() => {
+        initG();
+        showSignState('signin');
+        toast('Connected successfully!', 'success');
+    }).catch(() => {
+        document.getElementById('connBtn').innerHTML = '<i class="fa-solid fa-plug"></i> Connect';
+        document.getElementById('connBtn').disabled = false;
+        toast('Google\'s sign-in service isn\'t loaded yet. Try again in a few seconds.', 'error');
+    });
+}
+
+function waitForG() {
+    return new Promise((res, rej) => {
+        if (window.google?.accounts?.id) return res();
+        let n = 0;
+        const iv = setInterval(() => {
+            n++;
+            if (window.google?.accounts?.id) { clearInterval(iv); res(); }
+            if (n > 60) { clearInterval(iv); rej(); }
+        }, 250);
+    });
+}
+
+function initG() {
+    google.accounts.id.initialize({ client_id: clientId, callback: onCred });
+    const w = document.getElementById('gBtnWrap');
+    w.innerHTML = '';
+    google.accounts.id.renderButton(w, { theme:'filled_black', size:'large', text:'signin_with', width:Math.min(w.offsetWidth || 280, 360), shape:'rectangular' });
+}
+
+/* ===== Handle Google credential ===== */
+function onCred(r) {
+    if (!r.credential) { toast('Something went wrong with Google sign-in', 'error'); return; }
+    setToken(r.credential);
+}
+
+/* ===== Manual token fallback ===== */
+function toggleFallback() {
+    const el = document.getElementById('fallback');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function useManual() {
+    const t = document.getElementById('manTok').value.trim();
+    if (!t) { toast('Please paste a token first', 'error'); return; }
+    try {
+        const j = parseJwt(t);
+        if (j.payload.iss !== 'https://accounts.google.com' && j.payload.iss !== 'accounts.google.com') {
+            toast('This token is not from Google', 'error'); return;
+        }
+        setToken(t);
+    } catch (e) { toast('That doesn\'t look like a valid token', 'error'); }
+}
+
+/* ===== Set token (auth success) ===== */
+function setToken(tok) {
+    idToken = tok;
+    userInfo = parseJwt(tok).payload;
+    // Update user bar
+    const bar = document.getElementById('userBar');
+    bar.style.display = 'flex';
+    document.getElementById('uPic').src = userInfo.picture || '';
+    document.getElementById('uPic').style.display = userInfo.picture ? 'block' : 'none';
+    document.getElementById('uName').textContent = userInfo.name || '';
+    document.getElementById('uEmail').textContent = userInfo.email || '';
+    showSignState('form');
+    toast('Welcome, ' + (userInfo.given_name || userInfo.email || 'there') + '!', 'success');
+}
+
+/* ===== Sign out ===== */
+function signOut() {
+    idToken = null; userInfo = null;
+    document.getElementById('userBar').style.display = 'none';
+    if (window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
+    if (clientId) { showSignState('signin'); } else { showSignState('setup'); }
+    toast('Signed out', 'info');
+}
+
+/* ===== Sign message ===== */
+function signMsg() {
+    const msg = document.getElementById('msgIn').value.trim();
+    if (!msg) { toast('Please type a message first', 'error'); return; }
+    if (!idToken) { toast('You need to sign in first', 'error'); return; }
+    const payload = { v:1, msg, tok:idToken, ts:Math.floor(Date.now()/1000) };
+    const encoded = b64urlEnc(JSON.stringify(payload));
+    document.getElementById('certMsg').textContent = msg;
+    document.getElementById('certTime').textContent = 'Signed on ' + fmtTime(payload.ts);
+    document.getElementById('proofBox').textContent = encoded;
+    showSignState('result');
+    toast('Message signed!', 'success');
+}
+
+/* ===== Copy proof ===== */
+function copyProof() {
+    const txt = document.getElementById('proofBox').textContent;
+    const btn = document.getElementById('copyBtn');
+    navigator.clipboard.writeText(txt).then(() => {
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+        setTimeout(() => { btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy'; }, 2000);
+    }).catch(() => {
+        const ta = document.createElement('textarea'); ta.value = txt;
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+        setTimeout(() => { btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy'; }, 2000);
+    });
+}
+
+/* ===== Reset sign form ===== */
+function resetSign() {
+    document.getElementById('msgIn').value = '';
+    showSignState('form');
+}
+
+/* ===== Fetch Google JWKS ===== */
+async function fetchJwks() {
+    if (jwksCache && Date.now() < jwksExpiry) return jwksCache;
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/certs');
+    if (!r.ok) throw new Error('Failed to fetch');
+    jwksCache = await r.json();
+    jwksExpiry = Date.now() + 3600000;
+    return jwksCache;
+}
+
+/* ===== Verify Google token ===== */
+async function verifyGoogleTok(tok) {
+    const { header, payload, sig } = parseJwt(tok);
+    if (header.alg !== 'RS256') throw new Error('Unsupported algorithm');
+    if (payload.iss !== 'https://accounts.google.com' && payload.iss !== 'accounts.google.com') throw new Error('Invalid issuer');
+    const now = Math.floor(Date.now()/1000);
+    const expired = payload.exp < now;
+    const jwks = await fetchJwks();
+    const jwk = jwks.keys.find(k => k.kid === header.kid);
+    if (!jwk) throw new Error('Signing key not found (kid: ' + (header.kid||'none') + ')');
+    const key = await crypto.subtle.importKey('jwk', jwk, { name:'RSASSA-PKCS1-v1_5', hash:'SHA-256' }, false, ['verify']);
+    const data = new TextEncoder().encode(tok.split('.').slice(0,2).join('.'));
+    const sigBytes = Uint8Array.from(atob(sig.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
+    const valid = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, sigBytes, data);
+    if (!valid) throw new Error('Signature verification failed');
+    return { claims: payload, expired };
+}
+
+/* ===== Verify signed payload ===== */
+async function verifySig() {
+    const raw = document.getElementById('vIn').value.trim();
+    const resEl = document.getElementById('vRes');
+    const btn = document.getElementById('vBtn');
+    if (!raw) { toast('Please paste a proof code first', 'error'); return; }
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> Checking...';
+    resEl.innerHTML = '';
+    await new Promise(r => setTimeout(r, 80));
+    try {
+        let payload;
+        try { payload = JSON.parse(b64urlDec(raw)); } catch(e) { throw new Error('Invalid format'); }
+        if (!payload.v || !payload.msg || !payload.tok) throw new Error('Malformed');
+        if (payload.v !== 1) throw new Error('Unsupported version');
+        const { claims, expired } = await verifyGoogleTok(payload.tok);
+        showVResult(true, { msg: payload.msg, signedAt: payload.ts, name: claims.name, email: claims.email, sub: claims.sub, picture: claims.picture, iat: claims.iat, exp: claims.exp, expired });
+    } catch(e) {
+        showVResult(false, { error: friendlyErr(e) });
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Check This Proof';
+    }
+}
+
+/* ===== Show verify result ===== */
+function showVResult(ok, d) {
+    const el = document.getElementById('vRes');
+    if (ok) {
+        const warn = d.expired ? `<div class="warn-box"><i class="fa-solid fa-triangle-exclamation"></i><span>The signer's Google session has expired, but the signature itself is still valid.</span></div>` : '';
+        el.innerHTML = `
+        <div class="vr vr-ok">
+            <div class="flex items-start gap-4 mb-4">
+                <div class="vr-icon vr-icon-ok"><i class="fa-solid fa-check"></i></div>
+                <div>
+                    <div class="text-lg font-bold" style="color:var(--ok)">This is authentic</div>
+                    <div class="text-xs" style="color:var(--muted)">Verified against Google's security keys</div>
+                </div>
+            </div>
+            ${warn}
+            <div class="flex items-center gap-3 mb-4 p-3 rounded-xl" style="background:rgba(0,0,0,.15)">
+                ${d.picture ? `<img src="${escHtml(d.picture)}" alt="" class="w-11 h-11 rounded-full object-cover flex-shrink-0" onerror="this.style.display='none'">` : ''}
+                <div class="min-w-0">
+                    <div class="font-semibold text-sm truncate">${escHtml(d.name || 'Unknown')}</div>
+                    <div class="text-xs truncate" style="color:var(--muted)">${escHtml(d.email || '')}</div>
+                </div>
+            </div>
+            <div class="p-4 rounded-xl mb-3" style="background:rgba(0,0,0,.15)">
+                <div class="text-xs font-semibold mb-2" style="color:var(--muted)">SIGNED MESSAGE</div>
+                <p class="text-sm" style="color:var(--fg2);line-height:1.7;word-break:break-word">${escHtml(d.msg)}</p>
+            </div>
+            <div class="irow"><span class="k">Signed on</span><span class="v text-xs">${fmtTime(d.signedAt)}</span></div>
+            <div class="irow"><span class="k">Status</span><span class="v">${d.expired
+                ? '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:99px;font-size:.75rem;font-weight:600;background:rgba(245,158,11,.1);color:#f59e0b"><i class="fa-solid fa-clock text-[10px]"></i> Session expired</span>'
+                : '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:99px;font-size:.75rem;font-weight:600;background:var(--ok-dim);color:var(--ok)"><i class="fa-solid fa-circle-check text-[10px]"></i> Fully valid</span>'
+            }</span></div>
+        </div>`;
+    } else {
+        el.innerHTML = `
+        <div class="vr vr-err">
+            <div class="flex items-start gap-4">
+                <div class="vr-icon vr-icon-err"><i class="fa-solid fa-xmark"></i></div>
+                <div>
+                    <div class="text-lg font-bold" style="color:var(--err)">Not verified</div>
+                    <div class="text-sm mt-2" style="color:var(--fg2);line-height:1.6">${escHtml(d.error)}</div>
+                </div>
+            </div>
+        </div>`;
+    }
+}
+
+/* ===== Init ===== */
+document.addEventListener('DOMContentLoaded', () => {
+    if (clientId) {
+        document.getElementById('cidIn').value = clientId;
+        waitForG().then(() => {
+            initG();
+            showSignState('signin');
+        }).catch(() => {
+            showSignState('signin');
+        });
+    } else {
+        showSignState('setup');
+    }
+    // Enter keys
+    document.getElementById('cidIn').addEventListener('keydown', e => { if (e.key === 'Enter') connectClient(); });
+    document.getElementById('manTok').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); useManual(); } });
+    document.getElementById('vIn').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); verifySig(); } });
+});
+</script>
+</body>
+</html>
