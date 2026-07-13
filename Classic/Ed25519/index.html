@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Text Signer</title>
+</head>
+
+<body>
+<h2>Sign and Verify Text</h2>
+
+<textarea id="text" rows="5" cols="60">Hello GitHub</textarea>
+<br><br>
+
+<button id="generate">Generate Key</button>
+<button id="sign">Sign</button>
+<button id="verify">Verify</button>
+
+<h3>Public Key</h3>
+<textarea id="publicKey" rows="5" cols="60"></textarea>
+
+<h3>Signature</h3>
+<textarea id="signature" rows="5" cols="60"></textarea>
+
+<pre id="result"></pre>
+
+<script>
+let privateKey = null;
+let publicKey = null;
+
+const text = document.getElementById("text");
+const publicKeyBox = document.getElementById("publicKey");
+const signatureBox = document.getElementById("signature");
+const result = document.getElementById("result");
+
+function toBase64(buffer) {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+}
+
+function fromBase64(str) {
+  return Uint8Array.from(atob(str), c => c.charCodeAt(0));
+}
+
+async function exportKey(key) {
+  const raw = await crypto.subtle.exportKey("raw", key);
+  return toBase64(raw);
+}
+
+document.getElementById("generate").onclick = async () => {
+  const keys = await crypto.subtle.generateKey(
+    {
+      name: "Ed25519"
+    },
+    true,
+    ["sign", "verify"]
+  );
+
+  privateKey = keys.privateKey;
+  publicKey = keys.publicKey;
+
+  publicKeyBox.value = await exportKey(publicKey);
+  result.textContent = "Key generated";
+};
+
+document.getElementById("sign").onclick = async () => {
+  if (!privateKey) {
+    result.textContent = "Generate a key first";
+    return;
+  }
+
+  const data = new TextEncoder().encode(text.value);
+
+  const signature = await crypto.subtle.sign(
+    {
+      name: "Ed25519"
+    },
+    privateKey,
+    data
+  );
+
+  signatureBox.value = toBase64(signature);
+  result.textContent = "Signed";
+};
+
+document.getElementById("verify").onclick = async () => {
+  try {
+    const rawKey = fromBase64(publicKeyBox.value);
+
+    const importedKey = await crypto.subtle.importKey(
+      "raw",
+      rawKey,
+      {
+        name: "Ed25519"
+      },
+      true,
+      ["verify"]
+    );
+
+    const valid = await crypto.subtle.verify(
+      {
+        name: "Ed25519"
+      },
+      importedKey,
+      fromBase64(signatureBox.value),
+      new TextEncoder().encode(text.value)
+    );
+
+    result.textContent = valid
+      ? "Signature valid"
+      : "Signature invalid";
+
+  } catch (e) {
+    result.textContent = e.message;
+  }
+};
+</script>
+
+</body>
+</html>
