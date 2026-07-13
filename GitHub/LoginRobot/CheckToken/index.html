@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Token Validator</title>
+
+<style>
+body {
+    background: #000;
+    color: #00ff66;
+    font-family: Consolas, monospace;
+    padding: 30px;
+}
+
+h1 {
+    color: #00ff66;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+}
+
+.card {
+    border: 1px solid #00aa44;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 6px;
+}
+
+.success {
+    color: #00ff66;
+}
+
+.error {
+    color: #ff4444;
+}
+
+img {
+    border-radius: 50%;
+    width: 120px;
+    border: 2px solid #00ff66;
+}
+
+pre {
+    background: #111;
+    padding: 15px;
+    overflow: auto;
+    border: 1px solid #004d22;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>GitHub Token Validator</h1>
+
+    <div id="status" class="card">
+        Checking token...
+    </div>
+
+    <div id="result"></div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const token = params.get("q");
+
+const status = document.getElementById("status");
+const result = document.getElementById("result");
+
+if (!token) {
+    status.innerHTML = '<span class="error">No token found in ?q=</span>';
+} else {
+
+    fetch("https://api.github.com/user", {
+        headers: {
+            "Authorization": "Bearer " + token,
+            "Accept": "application/vnd.github+json"
+        }
+    })
+    .then(async response => {
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            status.innerHTML =
+                `<span class="error">❌ Invalid token</span><br><br>${data.message}`;
+            return;
+        }
+
+        status.innerHTML =
+            '<span class="success">✅ Valid token</span>';
+
+        result.innerHTML = `
+            <div class="card">
+                <h2>${data.name || "(No name)"}</h2>
+
+                <img src="${data.avatar_url}" alt="Avatar">
+
+                <p><strong>Login:</strong> ${data.login}</p>
+                <p><strong>ID:</strong> ${data.id}</p>
+                <p><strong>Bio:</strong> ${data.bio || ""}</p>
+                <p><strong>Company:</strong> ${data.company || ""}</p>
+                <p><strong>Location:</strong> ${data.location || ""}</p>
+                <p><strong>Email:</strong> ${data.email || ""}</p>
+                <p><strong>Followers:</strong> ${data.followers}</p>
+                <p><strong>Following:</strong> ${data.following}</p>
+                <p><strong>Public Repos:</strong> ${data.public_repos}</p>
+                <p><strong>Created:</strong> ${new Date(data.created_at).toLocaleString()}</p>
+                <p><strong>Profile:</strong>
+                    <a href="${data.html_url}" target="_blank" style="color:#00ff66;">
+                        ${data.html_url}
+                    </a>
+                </p>
+            </div>
+
+            <div class="card">
+                <h2>Raw JSON</h2>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            </div>
+        `;
+    })
+    .catch(err => {
+        status.innerHTML =
+            `<span class="error">Network Error</span><br>${err.message}`;
+    });
+}
+</script>
+
+</body>
+</html>
