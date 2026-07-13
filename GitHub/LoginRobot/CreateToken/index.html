@@ -2,452 +2,170 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>GitHub Device Token Creator</title>
-
+<title>GitHub Device Login</title>
 <style>
-body {
-    background:#000;
-    color:#00ff66;
-    font-family:Consolas, monospace;
-    padding:30px;
-}
+    body {
+        background: #000;
+        color: #fff;
+        font-family: monospace;
+        padding: 40px;
+        text-align: center;
+    }
 
-.container {
-    max-width:900px;
-    margin:auto;
-}
+    .box {
+        border: 1px solid white;
+        padding: 25px;
+        max-width: 600px;
+        margin: auto;
+    }
 
-h1 {
-    color:#00ff66;
-}
+    button {
+        background: white;
+        color: black;
+        border: none;
+        padding: 12px 25px;
+        cursor: pointer;
+        font-family: monospace;
+        font-weight: bold;
+    }
 
-.card {
-    border:1px solid #00aa44;
-    padding:20px;
-    margin-top:20px;
-    border-radius:6px;
-}
+    button:hover {
+        background: #ccc;
+    }
 
-button {
-    background:#000;
-    color:#00ff66;
-    border:1px solid #00ff66;
-    padding:12px 20px;
-    font-family:Consolas, monospace;
-    cursor:pointer;
-}
+    pre {
+        border: 1px solid white;
+        padding: 15px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        text-align: left;
+    }
 
-button:hover {
-    background:#003311;
-}
-
-.success {
-    color:#00ff66;
-}
-
-.error {
-    color:#ff4444;
-}
-
-.warning {
-    color:#ffaa00;
-}
-
-pre {
-    background:#111;
-    padding:15px;
-    border:1px solid #004d22;
-    overflow:auto;
-    white-space:pre-wrap;
-}
-
-#logs {
-    height:300px;
-    overflow:auto;
-    background:#050505;
-    border:1px solid #004d22;
-    padding:15px;
-    margin-top:20px;
-    font-size:14px;
-}
+    a {
+        color: white;
+    }
 </style>
-
 </head>
 
 <body>
 
-<div class="container">
+<div class="box">
+    <h1>GitHub Device Login</h1>
 
-<h1>GitHub Device Token Creator</h1>
+    <button onclick="startLogin()">Enable Device Flow</button>
 
-<div class="card" id="status">
-Waiting...
-</div>
-
-
-<div class="card">
-
-<button onclick="startDeviceLogin()">
-[ START LOGIN DEVICE ]
-</button>
-
-</div>
-
-
-<div class="card">
-
-<h2>Process Log</h2>
-
-<div id="logs">
-</div>
-
-</div>
-
-
-<div id="result"></div>
-
+    <div id="status"></div>
+    <pre id="output"></pre>
 </div>
 
 
 <script>
-
-const params = new URLSearchParams(window.location.search);
-
-const clientId =
-    params.get("q") ||
-    "Iv23liTeQ7kcDWDgXOTO";
-
-
-const status = document.getElementById("status");
-const result = document.getElementById("result");
-const logs = document.getElementById("logs");
-
+const CLIENT_ID = "Iv23liTeQ7kcDWDgXOTO";
 
 let deviceCode = null;
 let interval = null;
-let running = false;
+
+const status = document.getElementById("status");
+const output = document.getElementById("output");
 
 
+async function startLogin() {
 
-function log(message){
+    status.innerHTML = "Requesting device code...";
+    output.textContent = "";
 
-    const time =
-        new Date().toLocaleTimeString();
-
-    logs.innerHTML +=
-        `[${time}] ${message}<br>`;
-
-    logs.scrollTop =
-        logs.scrollHeight;
-}
-
-
-
-async function startDeviceLogin(){
-
-    if(running){
-
-        log("Login process already running.");
-        return;
-
-    }
-
-
-    running = true;
-
-
-    log("Starting GitHub device authentication.");
-    log("Client ID: " + clientId);
-
-
-    status.innerHTML =
-        "Requesting device code...";
-
-
-    try {
-
-
-        const response = await fetch(
-            "https://github.com/login/device/code",
-            {
-                method:"POST",
-                headers:{
-                    "Accept":"application/json",
-                    "Content-Type":
-                    "application/x-www-form-urlencoded"
-                },
-                body:
-                "client_id=" +
-                encodeURIComponent(clientId) +
-                "&scope=" +
-                encodeURIComponent("repo user")
-            }
-        );
-
-
-        log("Device code request sent.");
-
-        const data = await response.json();
-
-
-        log("GitHub response received.");
-
-
-        if(!data.device_code){
-
-            log("ERROR: No device code returned.");
-
-            status.innerHTML =
-            `<span class="error">
-            Failed creating device code
-            </span>`;
-
-            result.innerHTML =
-            `<pre>${JSON.stringify(data,null,2)}</pre>`;
-
-            running=false;
-
-            return;
+    const response = await fetch(
+        "https://github.com/login/device/code",
+        {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                client_id: CLIENT_ID
+            })
         }
+    );
 
+    const data = await response.json();
 
+    deviceCode = data.device_code;
 
-        deviceCode = data.device_code;
+    output.innerHTML =
+`Open:
+${data.verification_uri}
 
+Enter code:
+${data.user_code}
 
-        log("Device code created.");
-        log("Waiting for user authorization.");
+Waiting for authorization...`;
 
+    status.innerHTML = "Authorize the device in GitHub.";
 
-        status.innerHTML = `
-
-        <span class="success">
-        Device code created
-        </span>
-
-        <br><br>
-
-        Open:
-
-        <pre>${data.verification_uri}</pre>
-
-        Enter code:
-
-        <pre>${data.user_code}</pre>
-
-        `;
-
-
-
-        window.open(
-            data.verification_uri,
-            "_blank"
-        );
-
-
-        log(
-            "Opening GitHub verification page."
-        );
-
-
-        log(
-            "Polling every " +
-            data.interval +
-            " seconds."
-        );
-
-
-        interval=setInterval(
-            checkToken,
-            data.interval * 1000
-        );
-
-
-    }
-    catch(error){
-
-        log(
-            "Network error: " +
-            error.message
-        );
-
-        status.innerHTML =
-        `<span class="error">
-        Connection failed
-        </span>`;
-
-        running=false;
-
-    }
-
+    interval = setInterval(checkToken, data.interval * 1000);
 }
 
 
+async function checkToken() {
 
-async function checkToken(){
-
-    log(
-        "Checking authorization status..."
+    const response = await fetch(
+        "https://github.com/login/oauth/access_token",
+        {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                client_id: CLIENT_ID,
+                device_code: deviceCode,
+                grant_type: "urn:ietf:params:oauth:grant-type:device_code"
+            })
+        }
     );
 
 
-    try {
+    const data = await response.json();
 
 
-        const response = await fetch(
-            "https://github.com/login/oauth/access_token",
-            {
-                method:"POST",
-                headers:{
-                    "Accept":"application/json",
-                    "Content-Type":
-                    "application/x-www-form-urlencoded"
-                },
-                body:
-                "client_id=" +
-                encodeURIComponent(clientId) +
+    if (data.access_token) {
 
-                "&device_code=" +
-                encodeURIComponent(deviceCode) +
+        clearInterval(interval);
 
-                "&grant_type=" +
-                encodeURIComponent(
-                "urn:ietf:params:oauth:grant-type:device_code"
-                )
-            }
-        );
+        status.innerHTML = "Login successful.";
 
+        output.textContent =
+`GitHub Access Token:
 
-        const data =
-            await response.json();
+${data.access_token}`;
 
-
-
-        if(data.access_token){
-
-
-            clearInterval(interval);
-
-            running=false;
-
-
-            log(
-                "Authorization successful."
-            );
-
-
-            status.innerHTML =
-            `<span class="success">
-            Token created successfully
-            </span>`;
-
-
-            result.innerHTML = `
-
-            <div class="card">
-
-            <h2>Access Token</h2>
-            <pre>${data.access_token}</pre>
-
-            <h2>Token Type</h2>
-            <pre>${data.token_type}</pre>
-
-            <h2>Scope</h2>
-            <pre>${data.scope}</pre>
-
-            </div>
-
-            `;
-
-
-            return;
-
-        }
-
-
-
-        if(data.error === "authorization_pending"){
-
-            log(
-                "Waiting for GitHub user approval..."
-            );
-
-
-            status.innerHTML =
-            "Waiting for authorization...";
-
-        }
-
-
-
-        else if(data.error === "slow_down"){
-
-
-            log(
-                "GitHub requested slower polling."
-            );
-
-
-            clearInterval(interval);
-
-
-            status.innerHTML =
-            `<span class="warning">
-            Polling slowed down
-            </span>`;
-
-
-            running=false;
-
-        }
-
-
-
-        else if(data.error === "expired_token"){
-
-
-            log(
-                "Device code expired."
-            );
-
-
-            clearInterval(interval);
-
-
-            status.innerHTML =
-            `<span class="error">
-            Device code expired
-            </span>`;
-
-
-            running=false;
-
-        }
-
-
-
-        else if(data.error){
-
-            log(
-                "GitHub error: " +
-                data.error
-            );
-
-        }
-
-
-    }
-    catch(error){
-
-        log(
-            "Polling error: " +
-            error.message
-        );
-
+        return;
     }
 
+
+    if (data.error === "authorization_pending") {
+        return;
+    }
+
+
+    if (data.error === "slow_down") {
+        clearInterval(interval);
+        interval = setInterval(checkToken, 10000);
+        return;
+    }
+
+
+    if (data.error) {
+
+        clearInterval(interval);
+
+        output.textContent =
+`Error:
+
+${data.error}
+${data.error_description || ""}`;
+    }
 }
 
 </script>
