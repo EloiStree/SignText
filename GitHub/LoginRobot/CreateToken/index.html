@@ -3,57 +3,58 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GitHub Token Creator</title>
+
+<title>GitHub Device Token Creator</title>
 
 <style>
 body {
-    background: #000;
-    color: #00ff66;
-    font-family: Consolas, monospace;
-    padding: 30px;
-}
-
-h1 {
-    color: #00ff66;
+    background:#000;
+    color:#00ff66;
+    font-family:Consolas, monospace;
+    padding:30px;
 }
 
 .container {
-    max-width: 900px;
-    margin: auto;
+    max-width:900px;
+    margin:auto;
+}
+
+h1 {
+    color:#00ff66;
 }
 
 .card {
-    border: 1px solid #00aa44;
-    padding: 20px;
-    margin-top: 20px;
-    border-radius: 6px;
+    border:1px solid #00aa44;
+    padding:20px;
+    margin-top:20px;
+    border-radius:6px;
 }
 
 button {
-    background: #000;
-    color: #00ff66;
-    border: 1px solid #00ff66;
-    padding: 12px 20px;
-    font-family: Consolas, monospace;
-    cursor: pointer;
+    background:#000;
+    color:#00ff66;
+    border:1px solid #00ff66;
+    padding:12px 20px;
+    font-family:Consolas, monospace;
+    cursor:pointer;
 }
 
 button:hover {
-    background: #003311;
+    background:#003311;
 }
 
 .success {
-    color: #00ff66;
+    color:#00ff66;
 }
 
 .error {
-    color: #ff4444;
+    color:#ff4444;
 }
 
 pre {
-    background: #111;
-    padding: 15px;
-    border: 1px solid #004d22;
+    background:#111;
+    padding:15px;
+    border:1px solid #004d22;
     overflow:auto;
 }
 </style>
@@ -64,75 +65,204 @@ pre {
 
 <div class="container">
 
-<h1>GitHub Token Creator</h1>
+<h1>GitHub Device Token Creator</h1>
+
+<div class="card" id="status">
+Waiting...
+</div>
 
 <div class="card">
 
-<p>
-Authenticate with GitHub to create an OAuth access token.
-</p>
-
-<button onclick="login()">
-[ LOGIN WITH GITHUB ]
+<button onclick="startDeviceLogin()">
+[ START LOGIN DEVICE ]
 </button>
 
 </div>
 
-
 <div id="result"></div>
-
 
 </div>
 
 
 <script>
 
-function login(){
+const params = new URLSearchParams(window.location.search);
 
-    /*
-      Backend endpoint.
-      Example:
-      /auth/github
-      redirects user to GitHub OAuth.
-    */
+const clientId =
+    params.get("q") ||
+    "Iv23liTeQ7kcDWDgXOTO";
 
-    window.location.href="/auth/github";
+
+const status = document.getElementById("status");
+const result = document.getElementById("result");
+
+
+let deviceCode = null;
+let interval = null;
+
+
+async function startDeviceLogin(){
+
+    status.innerHTML =
+    "Requesting device code...";
+
+
+    const response = await fetch(
+        "https://github.com/login/device/code",
+        {
+            method:"POST",
+            headers:{
+                "Accept":"application/json",
+                "Content-Type":"application/x-www-form-urlencoded"
+            },
+            body:
+            "client_id=" + encodeURIComponent(clientId) +
+            "&scope=" + encodeURIComponent("repo user")
+        }
+    );
+
+
+    const data = await response.json();
+
+
+    if(!data.device_code){
+
+        status.innerHTML =
+        `<span class="error">
+        ❌ Failed
+        </span><br>${JSON.stringify(data)}`;
+
+        return;
+    }
+
+
+    deviceCode = data.device_code;
+
+
+    status.innerHTML = `
+
+    <span class="success">
+    Device code created
+    </span>
+
+    <br><br>
+
+    Open:
+
+    <pre>${data.verification_uri}</pre>
+
+    Enter code:
+
+    <pre>${data.user_code}</pre>
+
+    `;
+
+
+    window.open(
+        data.verification_uri,
+        "_blank"
+    );
+
+
+    interval = setInterval(
+        checkToken,
+        data.interval * 1000
+    );
 
 }
 
 
-const params = new URLSearchParams(window.location.search);
 
-const token = params.get("token");
-
-const result = document.getElementById("result");
+async function checkToken(){
 
 
-if(token){
+    const response = await fetch(
+        "https://github.com/login/oauth/access_token",
+        {
+            method:"POST",
+            headers:{
+                "Accept":"application/json",
+                "Content-Type":"application/x-www-form-urlencoded"
+            },
+            body:
+            "client_id=" + encodeURIComponent(clientId) +
+            "&device_code=" + encodeURIComponent(deviceCode) +
+            "&grant_type=urn:ietf:params:oauth:grant-type:device_code"
+        }
+    );
 
-    result.innerHTML = `
 
-    <div class="card">
+    const data = await response.json();
 
-    <h2 class="success">
-    ✅ Token Created
-    </h2>
 
-    <p>
-    Copy this token now. Store it securely.
-    </p>
+    if(data.access_token){
 
-    <pre>${token}</pre>
+        clearInterval(interval);
 
-    </div>
 
-    `;
+        status.innerHTML =
+        `<span class="success">
+        ✅ Token created
+        </span>`;
+
+
+        result.innerHTML = `
+
+        <div class="card">
+
+        <h2>Access Token</h2>
+
+        <pre>${data.access_token}</pre>
+
+        <h2>Token Type</h2>
+
+        <pre>${data.token_type}</pre>
+
+        <h2>Scope</h2>
+
+        <pre>${data.scope}</pre>
+
+        </div>
+
+        `;
+
+        return;
+    }
+
+
+    if(data.error === "authorization_pending"){
+
+        status.innerHTML =
+        "Waiting for GitHub authorization...";
+
+    }
+
+
+    if(data.error === "slow_down"){
+
+        clearInterval(interval);
+
+        status.innerHTML =
+        "Polling slowed down by GitHub.";
+
+    }
+
+
+    if(data.error === "expired_token"){
+
+        clearInterval(interval);
+
+        status.innerHTML =
+        `<span class="error">
+        Device code expired
+        </span>`;
+
+    }
 
 }
 
 
 </script>
-
 
 </body>
 </html>
