@@ -2,145 +2,82 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>GitHub Device Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Under Construction</title>
 <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
     body {
         background: #000;
-        color: #fff;
-        font-family: monospace;
-        padding: 40px;
+        color: #00ff66;
+        font-family: Arial, Helvetica, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
         text-align: center;
     }
-    .box {
-        border: 1px solid white;
-        padding: 25px;
-        max-width: 600px;
+
+    .container {
+        border: 2px solid #00ff66;
+        padding: 50px;
+        border-radius: 10px;
+        max-width: 500px;
+    }
+
+    h1 {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    p {
+        font-size: 1.1rem;
+        color: #99ffbb;
+        margin-bottom: 30px;
+    }
+
+    .loader {
+        width: 200px;
+        height: 8px;
+        background: #222;
+        border-radius: 5px;
         margin: auto;
+        overflow: hidden;
     }
-    button {
-        background: white;
-        color: black;
-        border: none;
-        padding: 12px 25px;
-        cursor: pointer;
-        font-family: monospace;
-        font-weight: bold;
+
+    .loader::before {
+        content: "";
+        display: block;
+        width: 40%;
+        height: 100%;
+        background: #00ff66;
+        animation: loading 1.5s infinite;
     }
-    button:hover { background: #ccc; }
-    button:disabled { background: #555; color: #999; cursor: not-allowed; }
-    pre {
-        border: 1px solid white;
-        padding: 15px;
-        white-space: pre-wrap;
-        word-break: break-all;
-        text-align: left;
-        margin-top: 15px;
+
+    @keyframes loading {
+        0% {
+            transform: translateX(-100%);
+        }
+        100% {
+            transform: translateX(350%);
+        }
     }
-    .error { color: #f85149; }
-    .ok { color: #3fb950; }
 </style>
 </head>
 <body>
 
-<div class="box">
-    <h1>GitHub Device Login</h1>
-    <p style="color:#888">Scope: read:user</p>
-    <button id="btn" onclick="startLogin()">Enable Device Flow</button>
-    <div id="status"></div>
-    <pre id="output"></pre>
+<div class="container">
+    <h1>🚧 Under Construction</h1>
+    <p>Our website is currently being built.<br>We'll be online soon.</p>
+
+    <div class="loader"></div>
 </div>
-
-<script>
-const btn = document.getElementById('btn');
-const status = document.getElementById('status');
-const output = document.getElementById('output');
-
-let deviceCode = null;
-let interval = null;
-
-async function startLogin() {
-    btn.disabled = true;
-    status.className = '';
-    status.innerHTML = "Requesting device code...";
-    output.textContent = "";
-
-    try {
-        const res = await fetch('/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ action: 'device_code' })
-        });
-
-        const data = await res.json();
-
-        if (data.error) {
-            status.className = 'error';
-            status.innerHTML = data.error_description || data.error;
-            btn.disabled = false;
-            return;
-        }
-
-        deviceCode = data.device_code;
-
-        output.innerHTML =
-`Open this URL:\n${data.verification_uri}\n\nEnter code:\n${data.user_code}\n\nWaiting for authorization...`;
-
-        status.className = '';
-        status.innerHTML = "Authorize the device on GitHub.";
-
-        interval = setInterval(checkToken, data.interval * 1000);
-
-    } catch (err) {
-        status.className = 'error';
-        status.innerHTML = err.message;
-        btn.disabled = false;
-    }
-}
-
-async function checkToken() {
-    try {
-        const res = await fetch('/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                action: 'token',
-                device_code: deviceCode
-            })
-        });
-
-        const data = await res.json();
-
-        if (data.access_token) {
-            clearInterval(interval);
-            status.className = 'ok';
-            status.innerHTML = "Login successful.";
-            output.textContent = `GitHub Access Token (read:user):\n\n${data.access_token}`;
-            btn.disabled = false;
-            return;
-        }
-
-        if (data.error === 'authorization_pending') return;
-
-        if (data.error === 'slow_down') {
-            clearInterval(interval);
-            interval = setInterval(checkToken, 10000);
-            return;
-        }
-
-        if (data.error) {
-            clearInterval(interval);
-            status.className = 'error';
-            status.innerHTML = data.error_description || data.error;
-            btn.disabled = false;
-        }
-    } catch (err) {
-        clearInterval(interval);
-        status.className = 'error';
-        status.innerHTML = err.message;
-        btn.disabled = false;
-    }
-}
-</script>
 
 </body>
 </html>
