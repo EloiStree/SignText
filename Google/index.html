@@ -3,422 +3,249 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Google account public info · no client ID</title>
+  <title>Google Account Info</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: linear-gradient(145deg, #f6f9fc 0%, #e9f1f8 100%);
+      background: #f0f4f9;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-      padding: 1.5rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px;
     }
     .card {
-      max-width: 640px;
+      max-width: 600px;
       width: 100%;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border-radius: 2.5rem;
-      box-shadow: 0 20px 40px -12px rgba(0, 20, 30, 0.25), 0 8px 24px -6px rgba(0, 0, 0, 0.05);
-      padding: 2rem 2rem 2.5rem;
-      transition: all 0.2s ease;
-      border: 1px solid rgba(255, 255, 255, 0.5);
-    }
-    h1 {
-      font-size: 1.8rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      color: #1e2a3a;
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      margin-bottom: 0.25rem;
-    }
-    .subhead {
-      color: #3e5a70;
-      font-weight: 400;
-      font-size: 0.95rem;
-      border-left: 3px solid #4285f4;
-      padding-left: 0.75rem;
-      margin-top: -0.2rem;
-      margin-bottom: 1.75rem;
-      opacity: 0.8;
-    }
-    .info-panel {
       background: white;
-      border-radius: 1.8rem;
-      padding: 1.8rem 1.8rem 1.2rem;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.02), 0 6px 12px -8px rgba(0,20,30,0.12);
-      border: 1px solid #eef4fa;
-      margin-bottom: 2rem;
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
     }
-    .avatar-row {
-      display: flex;
-      align-items: center;
-      gap: 1.2rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.8rem;
-    }
-    .avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: #d4e2f0;
+    h1 { font-size: 24px; color: #1a1a2e; margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 24px; font-size: 14px; }
+    .info-box {
+      background: #f8f9fa;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 16px 0;
+      min-height: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.4rem;
-      font-weight: 500;
-      color: #1a2b3c;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.04);
-      border: 2px solid white;
-      flex-shrink: 0;
-      background: #eef3f9;
-      object-fit: cover;
-    }
-    .avatar img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-      display: block;
-    }
-    .name-badge {
-      flex: 1;
-    }
-    .name-badge h2 {
-      font-size: 1.6rem;
-      font-weight: 550;
-      color: #0b1e2e;
-      line-height: 1.2;
-    }
-    .name-badge .email {
-      font-size: 0.95rem;
-      color: #346392;
-      background: #e4edf6;
-      padding: 0.2rem 1rem;
-      border-radius: 40px;
-      display: inline-block;
-      margin-top: 4px;
-      font-weight: 460;
-      letter-spacing: 0.01em;
-    }
-    .detail-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.8rem 1.2rem;
-      background: #f8faff;
-      border-radius: 1.4rem;
-      padding: 1.2rem 1.5rem;
-      margin-top: 0.5rem;
-      border: 1px solid #e2ebf5;
-    }
-    .detail-item {
-      display: flex;
       flex-direction: column;
+      border: 2px dashed #dee2e6;
     }
-    .detail-item .label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: #4f6b85;
-      font-weight: 600;
-    }
-    .detail-item .value {
-      font-size: 1rem;
-      font-weight: 470;
-      color: #142433;
-      word-break: break-word;
-    }
-    .detail-item .value.id-tag {
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 0.8rem;
-      background: #e6edf6;
-      padding: 0.1rem 0.6rem;
-      border-radius: 30px;
-      display: inline-block;
-      color: #1a3f60;
-    }
-    .action-area {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-top: 0.2rem;
-    }
+    .info-box .placeholder { color: #999; text-align: center; }
+    .info-box .avatar { width: 80px; height: 80px; border-radius: 50%; background: #e9ecef; margin-bottom: 12px; }
+    .info-box .name { font-size: 20px; font-weight: 600; color: #1a1a2e; }
+    .info-box .email { color: #555; font-size: 14px; }
     .btn {
-      background: white;
-      border: 1px solid #d0deeb;
-      padding: 0.75rem 1.8rem;
-      border-radius: 60px;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 100px;
+      font-size: 16px;
       font-weight: 500;
-      font-size: 0.95rem;
-      color: #1e3b5a;
       cursor: pointer;
-      transition: 0.15s;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      transition: all 0.2s;
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      background: #fafcff;
+      gap: 8px;
     }
     .btn-primary {
       background: #1a73e8;
-      border: 1px solid #1a73e8;
       color: white;
-      box-shadow: 0 4px 8px -4px rgba(26, 115, 232, 0.3);
     }
-    .btn-primary:hover {
-      background: #1557b0;
-      border-color: #1557b0;
-      box-shadow: 0 6px 12px -6px rgba(26, 115, 232, 0.4);
-      transform: scale(1.01);
-    }
-    .btn:active {
-      transform: scale(0.97);
-    }
-    .btn:disabled {
-      opacity: 0.6;
-      pointer-events: none;
-      filter: grayscale(0.3);
-    }
+    .btn-primary:hover { background: #1557b0; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .btn-outline {
       background: transparent;
-      border: 1px solid #b8cfE5;
+      color: #1a73e8;
+      border: 2px solid #1a73e8;
     }
-    .status-badge {
-      font-size: 0.8rem;
-      background: #e1e9f3;
-      padding: 0.3rem 1rem;
-      border-radius: 40px;
-      color: #1f3e5c;
+    .btn-outline:hover { background: #f0f7ff; }
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+    .btn-danger:hover { background: #c82333; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+    .setup-section {
+      background: #fff3cd;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid #ffc107;
+    }
+    .setup-section label { font-weight: 600; font-size: 14px; color: #856404; }
+    .setup-section input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #ced4da;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-top: 6px;
+    }
+    .setup-section input:focus { outline: 2px solid #1a73e8; border-color: transparent; }
+    .setup-section .hint {
+      font-size: 12px;
+      color: #856404;
+      margin-top: 6px;
+    }
+    .error { color: #dc3545; font-size: 14px; margin-top: 8px; }
+    .success { color: #28a745; font-size: 14px; margin-top: 8px; }
+    .hidden { display: none !important; }
+    .status {
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      font-size: 13px;
+      padding: 4px 12px;
+      border-radius: 100px;
+      background: #e9ecef;
     }
-    .status-badge .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-    .dot.green { background: #21a663; }
-    .dot.gray { background: #8499ae; }
-    .footnote {
-      margin-top: 1.8rem;
-      font-size: 0.75rem;
-      color: #55708b;
-      border-top: 1px solid #dbe6f0;
-      padding-top: 1.2rem;
-      text-align: center;
-      opacity: 0.7;
-      letter-spacing: 0.01em;
-    }
-    .footnote code {
-      background: #e4ecf5;
-      padding: 0.15rem 0.6rem;
-      border-radius: 30px;
-      font-size: 0.7rem;
-      color: #1a3b58;
-    }
-    .error-box {
-      background: #ffeae9;
-      border-left: 5px solid #d93c3c;
-      padding: 0.9rem 1.2rem;
-      border-radius: 1.2rem;
-      color: #841f1f;
-      font-size: 0.95rem;
-      margin: 0.5rem 0 0.8rem;
-    }
-    .hidden { display: none; }
-    @media (max-width: 500px) {
-      .card { padding: 1.5rem; }
-      .detail-grid { grid-template-columns: 1fr; }
-      .avatar { width: 64px; height: 64px; font-size: 1.8rem; }
-    }
+    .status .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .status .dot.on { background: #28a745; }
+    .status .dot.off { background: #dc3545; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   </style>
 </head>
 <body>
-  <div class="card" id="app">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-      <h1>
-        <span>🔐</span> Google info
-      </h1>
-      <span class="status-badge" id="statusBadge">
-        <span class="dot gray" id="statusDot"></span>
-        <span id="statusText">disconnected</span>
+  <div class="card">
+    <div class="header">
+      <h1>🔐 Google Account Info</h1>
+      <span class="status" id="statusBadge">
+        <span class="dot off" id="statusDot"></span>
+        <span id="statusText">Disconnected</span>
       </span>
     </div>
-    <div class="subhead">public profile · no client ID or API key</div>
+    <p class="subtitle">View public profile information from your Google account</p>
 
-    <!-- info panel -->
-    <div class="info-panel" id="infoPanel">
-      <div id="profileContent">
-        <!-- placeholder: will be filled by JS -->
-        <div style="text-align: center; padding: 1.2rem 0; color: #3b5b78;">
-          <span style="font-size: 2.4rem; opacity: 0.3;">👤</span>
-          <p style="margin-top: 0.4rem; font-weight: 350;">Sign in with Google to see public info</p>
-        </div>
+    <!-- Setup section: client ID input -->
+    <div class="setup-section" id="setupSection">
+      <label for="clientIdInput">📋 Google Client ID (required for OAuth)</label>
+      <input type="text" id="clientIdInput" placeholder="Your Client ID from Google Cloud Console">
+      <div class="hint">
+        💡 Get one for free at 
+        <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a> 
+        → Create Credentials → OAuth client ID → Web application
+        <br>Add <code>http://localhost</code> to Authorized JavaScript origins for local testing.
       </div>
     </div>
 
-    <!-- actions -->
-    <div class="action-area">
-      <button class="btn btn-primary" id="loginBtn"> 
-        <span>🔑</span> Sign in with Google
-      </button>
-      <button class="btn btn-outline" id="logoutBtn" disabled>
-        <span>🚪</span> Sign out
-      </button>
+    <!-- Info display -->
+    <div class="info-box" id="infoBox">
+      <div class="placeholder" id="placeholder">
+        <div style="font-size: 48px; opacity: 0.3;">👤</div>
+        <p style="margin-top: 8px;">Sign in to see your public profile</p>
+      </div>
+      <div id="profileContent" class="hidden" style="text-align: center; width: 100%;">
+        <div class="avatar" id="avatarDisplay" style="margin: 0 auto 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 32px; color: #666;"></div>
+        <div class="name" id="nameDisplay">—</div>
+        <div class="email" id="emailDisplay">—</div>
+        <div style="margin-top: 8px; font-size: 12px; color: #999;" id="idDisplay">ID: —</div>
+      </div>
     </div>
 
-    <!-- hidden error / message -->
-    <div id="messageBox" class="error-box hidden"></div>
+    <!-- Error/success messages -->
+    <div id="messageBox" class="error hidden"></div>
 
-    <div class="footnote">
-      <span>⚡ OAuth 2.0 implicit flow · </span>
-      <code>profile</code> + <code>email</code> scopes
+    <!-- Actions -->
+    <div class="actions">
+      <button class="btn btn-primary" id="loginBtn">🔑 Sign in with Google</button>
+      <button class="btn btn-outline hidden" id="logoutBtn">🚪 Sign out</button>
     </div>
+
+    <p style="margin-top: 20px; font-size: 12px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 16px;">
+      Uses Google OAuth 2.0 implicit flow · Requires a valid Client ID
+    </p>
   </div>
-  <!-- Load Google Identity Services library (official) -->
+
   <script src="https://accounts.google.com/gsi/client"></script>
   <script>
     (function() {
-      "use strict";
+      'use strict';
 
-      // ----- DOM refs -----
-      const profileContent = document.getElementById('profileContent');
+      // DOM refs
+      const clientIdInput = document.getElementById('clientIdInput');
       const loginBtn = document.getElementById('loginBtn');
       const logoutBtn = document.getElementById('logoutBtn');
       const statusText = document.getElementById('statusText');
       const statusDot = document.getElementById('statusDot');
+      const infoBox = document.getElementById('infoBox');
+      const placeholder = document.getElementById('placeholder');
+      const profileContent = document.getElementById('profileContent');
+      const avatarDisplay = document.getElementById('avatarDisplay');
+      const nameDisplay = document.getElementById('nameDisplay');
+      const emailDisplay = document.getElementById('emailDisplay');
+      const idDisplay = document.getElementById('idDisplay');
       const messageBox = document.getElementById('messageBox');
+      const setupSection = document.getElementById('setupSection');
 
-      // ----- state -----
-      let currentUser = null;           // { name, email, picture, id, given_name, family_name? }
-      let accessToken = null;          // we keep it only for reference, not used for API calls
+      let currentUser = null;
       let isInitialized = false;
 
-      // ----- helper: update UI with user info -----
+      function showMessage(msg, isError = true) {
+        if (!msg) { messageBox.classList.add('hidden'); messageBox.textContent = ''; return; }
+        messageBox.classList.remove('hidden');
+        messageBox.textContent = msg;
+        messageBox.className = isError ? 'error' : 'success';
+      }
+
+      function setStatus(connected) {
+        statusText.textContent = connected ? 'Connected' : 'Disconnected';
+        statusDot.className = 'dot ' + (connected ? 'on' : 'off');
+      }
+
       function renderProfile(user) {
         if (!user) {
-          profileContent.innerHTML = `
-            <div style="text-align: center; padding: 1.2rem 0; color: #3b5b78;">
-              <span style="font-size: 2.4rem; opacity: 0.3;">👤</span>
-              <p style="margin-top: 0.4rem; font-weight: 350;">Sign in with Google to see public info</p>
-            </div>
-          `;
-          logoutBtn.disabled = true;
-          statusText.innerText = 'disconnected';
-          statusDot.className = 'dot gray';
+          placeholder.classList.remove('hidden');
+          profileContent.classList.add('hidden');
+          setStatus(false);
+          logoutBtn.classList.add('hidden');
           return;
         }
 
-        // build avatar: use picture if available, else initials
-        let avatarHtml = '';
+        placeholder.classList.add('hidden');
+        profileContent.classList.remove('hidden');
+        setStatus(true);
+        logoutBtn.classList.remove('hidden');
+
+        // Avatar
         if (user.picture) {
-          avatarHtml = `<img src="${user.picture}" alt="avatar" referrerpolicy="no-referrer" />`;
+          avatarDisplay.innerHTML = `<img src="${user.picture}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" referrerpolicy="no-referrer">`;
         } else {
           const initial = (user.given_name?.[0] || user.name?.[0] || '?').toUpperCase();
-          avatarHtml = `<span style="font-size: 2.6rem; font-weight: 400;">${initial}</span>`;
+          avatarDisplay.textContent = initial;
+          avatarDisplay.style.background = '#e9ecef';
+          avatarDisplay.style.display = 'flex';
+          avatarDisplay.style.alignItems = 'center';
+          avatarDisplay.style.justifyContent = 'center';
+          avatarDisplay.style.fontSize = '32px';
+          avatarDisplay.style.fontWeight = '600';
+          avatarDisplay.style.color = '#666';
         }
 
-        // email display
-        const emailDisplay = user.email ? user.email : '—';
-
-        // id short
-        const shortId = user.id ? user.id.slice(0, 12) + '…' : '—';
-
-        profileContent.innerHTML = `
-          <div class="avatar-row">
-            <div class="avatar">${avatarHtml}</div>
-            <div class="name-badge">
-              <h2>${user.name || 'No name'}</h2>
-              <span class="email">${emailDisplay}</span>
-            </div>
-          </div>
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="label">ID</span>
-              <span class="value id-tag">${shortId}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Given name</span>
-              <span class="value">${user.given_name || '—'}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Family name</span>
-              <span class="value">${user.family_name || '—'}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">Locale</span>
-              <span class="value">${user.locale || '—'}</span>
-            </div>
-          </div>
-        `;
-
-        logoutBtn.disabled = false;
-        statusText.innerText = 'connected';
-        statusDot.className = 'dot green';
+        nameDisplay.textContent = user.name || 'No name';
+        emailDisplay.textContent = user.email || 'No email';
+        idDisplay.textContent = 'ID: ' + (user.id ? user.id.substring(0, 15) + '…' : '—');
       }
 
-      // ----- show/hide message -----
-      function showMessage(msg, isError = true) {
-        if (!msg) {
-          messageBox.classList.add('hidden');
-          messageBox.innerText = '';
-          return;
-        }
-        messageBox.classList.remove('hidden');
-        messageBox.innerText = msg;
-        if (isError) {
-          messageBox.style.borderLeftColor = '#d93c3c';
-          messageBox.style.background = '#ffeae9';
-          messageBox.style.color = '#841f1f';
-        } else {
-          messageBox.style.borderLeftColor = '#1f8b4c';
-          messageBox.style.background = '#e3f5ec';
-          messageBox.style.color = '#0b482b';
-        }
-      }
-
-      // ----- handle user data from Google token response -----
       function handleCredentialResponse(response) {
-        // response contains credential (JWT) and other fields
-        // we decode the JWT payload to extract user info (public profile)
         try {
-          const payload = response.credential; // JWT string
-          if (!payload) {
-            showMessage('No credential received from Google.', true);
-            return;
-          }
+          const payload = response.credential;
+          if (!payload) { showMessage('No credential received.', true); return; }
 
-          // JWT parts: header.payload.signature
           const parts = payload.split('.');
-          if (parts.length !== 3) {
-            showMessage('Invalid credential format.', true);
-            return;
-          }
+          if (parts.length !== 3) { showMessage('Invalid credential format.', true); return; }
 
-          // decode base64url payload
           const base64Url = parts[1];
           const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-          const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-          }).join(''));
-
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
           const userData = JSON.parse(jsonPayload);
 
-          // map fields we want
-          const user = {
+          currentUser = {
             id: userData.sub || null,
             name: userData.name || null,
             given_name: userData.given_name || null,
@@ -428,174 +255,117 @@
             locale: userData.locale || null,
           };
 
-          // store user & token (token not used for API, but keep for reference)
-          currentUser = user;
-          accessToken = response.access_token || null;  // not used
-
           renderProfile(currentUser);
-          showMessage(null); // clear any error
-          // store in session (optional) — but we keep it simple
+          showMessage('✅ Successfully signed in!', false);
+          // Store client ID in localStorage
+          localStorage.setItem('google_client_id', clientIdInput.value.trim());
         } catch (err) {
-          console.error('Error decoding credential:', err);
-          showMessage('Could not parse profile information. Please try again.', true);
+          console.error('Error:', err);
+          showMessage('Failed to parse profile. Please try again.', true);
         }
       }
 
-      // ----- logout / reset -----
-      function logout() {
-        // revoke token? not needed for implicit flow, just clear state
-        currentUser = null;
-        accessToken = null;
-        renderProfile(null);
-        showMessage(null);
-        // Disable logout
-        logoutBtn.disabled = true;
-        // also we could try to revoke but it requires token, we ignore.
-        // (Google one-tap doesn't have a direct logout, but we just clear UI)
-        // We also trigger a sign-out from Google via iframe? not needed.
-        // The user will sign in again using the login button.
-      }
+      function initGIS(clientId) {
+        if (!clientId) {
+          showMessage('Please enter your Google Client ID first.', true);
+          return false;
+        }
 
-      // ----- initialize Google Identity Services -----
-      function initGIS() {
-        if (isInitialized) return;
         try {
-          // The client ID is not required for the implicit flow with the 'google.accounts.oauth2' 
-          // but we need to initialize the token client. We use the 'code' client? 
-          // Actually we use the 'token' client (implicit) without client_id? 
-          // The spec says client_id is REQUIRED. But we want to avoid hardcoding a client id.
-          // WORKAROUND: Use the 'google.accounts.id.initialize' with a dummy client id? No, that requires a valid client ID.
-          // But we are using the 'google.accounts.oauth2' library to get the token directly.
-          // We'll use the TokenClient with a dummy client_id? That won't work.
-          // BUT: the 'google.accounts.id.initialize' with a fake client_id won't work either.
-          // however we can use the 'google.accounts.oauth2' with 'client_id' set to a placeholder?
-          // The real solution: we can't use Google APIs without a client ID.
-          // But for a demo, we can use the 'google.accounts.id.initialize' with a *valid* client ID from a public sample?
-          // We are trying to avoid putting a client ID in code. But we need one for the flow.
-          // We can use the 'google.accounts.oauth2' with a client_id that is well-known? 
-          // Actually we can not. But there is a way: use the 'google.accounts.id.initialize' with a dummy
-          // client_id that is not validated? It will fail.
-          // But the user explicitly asked "without client id api or auth" — meaning no client ID or API key.
-          // However, the OAuth 2.0 implicit flow requires a client ID. But we can use the 'google.accounts.id.initialize'
-          // with a client ID that is publicly known? Not secure, but for demo we can use a fake one? It will not work.
-          // We need a valid client ID to get a token. But the instruction says "without client id api or auth"
-          // could be interpreted as: the page should not require the user to provide a client ID, and it should work
-          // without any API key. But Google OAuth always needs a client ID. 
-          // The only way to do this without a client ID is to use the Google Sign-In button which internally uses a default
-          // client ID from the gsi library? Actually the library uses the client ID from the 'data-client_id' attribute.
-          // We could use a default client ID from a public demo? That is not safe, but for a demo page we can use a known client ID.
-          // The safest: we use the 'google.accounts.id.initialize' with a client ID that we provide, but we can put a placeholder
-          // and let the user replace it? But the user asked "without client id api" meaning the page should not ask for one.
-          // We can embed a dummy client ID that is used for testing? That would be against Google's policy.
-          // However, we can use the 'google.accounts.oauth2' with a client_id that is not validated? No.
-          // So we need a workaround: Use the 'google.accounts.id.initialize' with a client ID that is public from Google's
-          // own sample? There is a known client ID: '407408718192.apps.googleusercontent.com' used for some demos. 
-          // But it's not recommended. I will use a placeholder and inform the user.
-          // But to make it functional, I will use a dummy client_id and show a message that a valid client ID is needed.
-          // BUT the user expects it to work. So I will use a public demo client ID from Google's own sample.
-          // I'll use the one from Google's official documentation: 'YOUR_CLIENT_ID' but that won't work.
-          // Actually, the only way to have it work without the user providing a client ID is to use the 'google.accounts.id.initialize'
-          // with a client ID that is valid and publicly known. There is one from the Google Identity docs: '407408718192.apps.googleusercontent.com'
-          // that is used in the official sample. I will use that for demonstration. It's a client ID that is publicly used for demos.
-          // This is a bit of a hack, but it fits the requirement "without client id api" meaning the user does not need to provide one.
-          // I'll use that.
-          const DEMO_CLIENT_ID = '407408718192.apps.googleusercontent.com'; // known demo client ID
-
-          // Initialize the ID service
           google.accounts.id.initialize({
-            client_id: DEMO_CLIENT_ID,
+            client_id: clientId,
             callback: handleCredentialResponse,
             cancel_on_tap_outside: false,
             auto_select: false,
-            // We don't need login_uri, it's implicit flow
           });
-
-          // We will use the 'prompt' method to show the One Tap? 
-          // But we want a button click to trigger sign-in, not auto prompt.
-          // So we'll use the 'google.accounts.id.prompt' on button click? 
-          // The prompt shows the One Tap, but we want a button that triggers sign-in.
-          // We'll use the 'google.accounts.id.prompt' method, but it's a one-tap.
-          // Alternatively we can use the 'google.accounts.oauth2' TokenClient, but it also needs client ID.
-          // We'll use the ID.initialize with prompt, and we'll call prompt() when the button is clicked.
-          // But prompt() shows the One Tap, which may not be what we want, but it works.
-          // We'll also add a custom button that triggers the prompt.
-          // However, we want a sign-in button that shows the Google sign-in popup.
-          // We'll use the 'google.accounts.id.renderButton' to render the standard button, but we want custom.
-          // We'll use the 'google.accounts.id.prompt' to trigger the One Tap, but we need to call it on click.
-          // Another approach: use the 'google.accounts.oauth2' with 'initTokenClient' and 'requestAccessToken'
-          // but that also needs client_id. We'll stick with the ID.initialize + prompt.
-          // We'll call prompt() on login button click.
-          // Let's store the initialized state.
           isInitialized = true;
-          console.log('Google Identity Services initialized (demo client ID)');
           showMessage(null);
-          // We want to enable the login button (it's already enabled)
-          // Optionally we can also render the default button, but we use custom.
-          // We attach the prompt to the login button click.
-          // Also we want to handle the case where the user is already signed in? 
-          // We'll not use auto sign-in to keep it simple.
+          return true;
         } catch (e) {
           console.error('GIS init error:', e);
-          showMessage('Failed to initialize Google Identity Services. Check console.', true);
+          showMessage('Failed to initialize Google Sign-In. Check your Client ID.', true);
+          return false;
         }
       }
 
-      // ----- attach login handler -----
-      function attachLogin() {
-        loginBtn.addEventListener('click', function() {
-          if (!isInitialized) {
-            initGIS();
-          }
-          // Trigger the One Tap prompt or the sign-in flow.
-          // We use the prompt() method of the ID service.
-          // But if the user is already signed in, prompt will show a notification.
-          // We want to force a new sign-in, we can use 'google.accounts.id.prompt' 
-          // and also we can set 'auto_select: false' to show the account chooser.
-          // We'll also pass a hint to show the sign-in dialog.
-          try {
-            // We can also use the 'google.accounts.id.prompt' to show the One Tap.
-            // But sometimes it doesn't show if the user is already signed in.
-            // We can use the 'google.accounts.id.disableAutoSelect' to reset.
-            // Let's just call prompt.
-            google.accounts.id.prompt();
-            // Also we can log.
-            console.log('Prompt triggered');
-          } catch (e) {
-            console.warn('Prompt error:', e);
-            // fallback: we could use the 'google.accounts.oauth2' but we skip.
-            showMessage('Could not trigger sign-in. Please try again.', true);
-          }
-        });
+      function login() {
+        const clientId = clientIdInput.value.trim();
+        if (!clientId) {
+          showMessage('Please enter your Google Client ID in the field above.', true);
+          clientIdInput.focus();
+          return;
+        }
 
-        // logout
-        logoutBtn.addEventListener('click', function() {
-          logout();
-          // also try to disable any auto sign-in for next time
-          try {
-            google.accounts.id.disableAutoSelect();
-          } catch (e) {}
-        });
+        if (!isInitialized) {
+          if (!initGIS(clientId)) return;
+        }
+
+        try {
+          google.accounts.id.prompt();
+        } catch (e) {
+          console.warn('Prompt error:', e);
+          showMessage('Could not trigger sign-in. Please try again.', true);
+        }
       }
 
-      // ----- check if already signed in? We don't have persistent state -----
-      // ----- start -----
-      function init() {
-        // Initialize GIS automatically, but we also call it on login click
-        initGIS(); 
-        attachLogin();
-        // render default (no user)
+      function logout() {
+        currentUser = null;
         renderProfile(null);
-        // Show a friendly message
-        showMessage('Click "Sign in with Google" to see public info.', false);
+        showMessage(null);
+        try {
+          google.accounts.id.disableAutoSelect();
+          google.accounts.id.cancel();
+        } catch (e) {}
+        setStatus(false);
+        isInitialized = false;
+        showMessage('Signed out successfully.', false);
+        // Re-initialize without auto-login
+        const clientId = clientIdInput.value.trim();
+        if (clientId) initGIS(clientId);
       }
 
-      // Ensure DOM loaded
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-      } else {
-        init();
+      // Load saved client ID
+      function loadSavedClientId() {
+        const saved = localStorage.getItem('google_client_id');
+        if (saved) {
+          clientIdInput.value = saved;
+        }
       }
 
+      // Event listeners
+      loginBtn.addEventListener('click', login);
+      logoutBtn.addEventListener('click', logout);
+
+      // Initialize
+      loadSavedClientId();
+      renderProfile(null);
+
+      // Auto-init if client ID is already filled
+      if (clientIdInput.value.trim()) {
+        initGIS(clientIdInput.value.trim());
+      }
+
+      // Also init when client ID is entered and user presses Enter
+      clientIdInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const clientId = clientIdInput.value.trim();
+          if (clientId) {
+            initGIS(clientId);
+            showMessage('✅ Client ID saved. Click "Sign in" to continue.', false);
+            localStorage.setItem('google_client_id', clientId);
+          }
+        }
+      });
+
+      // Save client ID on blur
+      clientIdInput.addEventListener('blur', () => {
+        const clientId = clientIdInput.value.trim();
+        if (clientId) {
+          localStorage.setItem('google_client_id', clientId);
+        }
+      });
+
+      console.log('🔐 Google Account Info ready. Enter your Client ID to get started.');
     })();
   </script>
 </body>
